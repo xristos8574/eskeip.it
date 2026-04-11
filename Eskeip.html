@@ -68,7 +68,6 @@
         }
         .header-link:hover { text-decoration: underline; }
 
-        /* SECTION HEADERS */
         .section-label {
             grid-column: 1 / -1;
             font-size: 0.65rem;
@@ -121,7 +120,6 @@
         .badge-and    { background: #15803d; color: #bbf7d0; }
         .badge-desk   { background: #7c3aed; color: #ede9fe; }
         .badge-all    { background: #0f766e; color: #99f6e4; }
-        .badge-new    { background: #b45309; color: #fef3c7; }
 
         button, .btn-label {
             display: block;
@@ -164,7 +162,6 @@
         .ok      { color: var(--success) !important; }
         .warn    { color: var(--warn)    !important; }
 
-        /* MEDIA */
         #v-preview {
             width: 100%;
             border-radius: 8px;
@@ -184,7 +181,6 @@
         }
         canvas#fp-canvas { display: none; }
 
-        /* DROP ZONE */
         #drop-zone {
             border: 2px dashed #334155;
             padding: 12px;
@@ -198,13 +194,11 @@
         #drop-zone.drag-over { border-color: var(--accent); color: var(--accent); }
         input[type="file"] { display: none; }
 
-        /* SENSOR BARS */
         .sensor-bar { height: 6px; border-radius: 3px; background: #1e293b; margin-top: 4px; overflow: hidden; }
         .sensor-fill { height: 100%; border-radius: 3px; background: var(--accent); transition: width 0.1s; width: 0%; }
 
-        /* SCROLLABLE LOG */
         .log-scroll {
-            max-height: 90px;
+            max-height: 120px;
             overflow-y: auto;
             font-size: 0.68rem;
             font-family: monospace;
@@ -218,7 +212,6 @@
             word-break: break-all;
         }
 
-        /* TABS */
         .tab-bar { display: flex; gap: 4px; margin-bottom: 6px; flex-wrap: wrap; }
         .tab-btn {
             flex: 1;
@@ -236,7 +229,6 @@
         }
         .tab-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
 
-        /* PERMISSION GRID */
         .perm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 6px; }
         .perm-item { background: #1e293b; border-radius: 6px; padding: 5px 8px; font-size: 0.65rem; font-family: monospace; display: flex; justify-content: space-between; align-items: center; }
         .perm-state-granted  { color: var(--success); }
@@ -244,11 +236,9 @@
         .perm-state-prompt   { color: var(--warn); }
         .perm-state-unknown  { color: #64748b; }
 
-        /* DEEP LINK TABS */
         .dl-section { display: none; }
         .dl-section.active { display: block; }
 
-        /* EXPLANATION SECTION */
         #about-eskeip {
             max-width: 1200px;
             margin: 2rem auto;
@@ -281,12 +271,10 @@
 
 <div class="grid">
 
-    <!-- ═══════════════════════════════════════════════════════════ -->
-    <!-- SECTION 1: SYSTEM & OS INTERACTION (REORDERED) -->
-    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- SECTION 1: SYSTEM & OS INTERACTION -->
     <div class="section-label">&#9654; SYSTEM &amp; OS INTERACTION</div>
 
-    <!-- FILE SYSTEM (FIRST IN SECTION) -->
+    <!-- FILE SYSTEM -->
     <div class="card">
         <h3>&#128193; File &amp; Disk
             <span class="badge badge-all">ALL PLATFORMS</span>
@@ -301,6 +289,16 @@
         <button onclick="accessFile()" style="background:#8b5cf6">&#128269; Modern File Picker (Desktop)</button>
         <button onclick="saveFile()" style="background:#10b981">&#128190; Save to Disk (Universal)</button>
         <div id="fs-log" class="status">Ready</div>
+    </div>
+
+    <!-- PERMISSIONS AUDIT (MOVED HERE) -->
+    <div class="card">
+        <h3>&#128272; Permissions Audit
+            <span class="badge badge-all">ALL PLATFORMS</span>
+        </h3>
+        <button onclick="auditPermissions()">&#128269; Scan All Permission States</button>
+        <div class="perm-grid" id="perm-grid"></div>
+        <div id="perm-log" class="status">Click to audit</div>
     </div>
 
     <!-- OS SHELL -->
@@ -400,16 +398,14 @@
         <h3>&#128275; Kiosk Escape Toolkit
             <span class="badge badge-desk">Desktop</span>
         </h3>
-        <button onclick="tryKioskEscape()">&#128275; Attempt Kiosk Escape</button>
         <button onclick="openNewTab()" style="background:#0ea5e9">&#128196; Open New Tab</button>
         <button onclick="openAboutBlank()" style="background:#6366f1">&#128196; Open about:blank</button>
         <button onclick="historyProbe()" style="background:#7c3aed">&#128336; History Length Probe</button>
-        <button onclick="openDevTools()" style="background:#334155">&#128736; DevTools Hint</button>
         <button onclick="triggerPrintPreview()" style="background:#475569">&#128424; Print Preview Escape</button>
         <div id="kiosk-log" class="status">Ready</div>
     </div>
 
-    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- SECTION 2: MEDIA & SENSORS -->
     <div class="section-label">&#9654; MEDIA &amp; SENSORS</div>
 
     <!-- CAMERA -->
@@ -451,10 +447,22 @@
             <span class="badge badge-ios">iOS</span>
             <span class="badge badge-and">Android</span>
         </h3>
-        <button onclick="startOrientation()">&#128260; Track Device Tilt</button>
-        <button onclick="startAccelerometer()" style="background:#0ea5e9">&#128200; Accelerometer</button>
-        <button onclick="startGyroscope()" style="background:#0284c7">&#128260; Gyroscope</button>
-        <button onclick="startMagnetometer()" style="background:#7c3aed">&#129522; Magnetometer</button>
+        <div style="display:flex;gap:4px">
+            <button onclick="startOrientation()">&#128260; Track Tilt</button>
+            <button onclick="stopOrientation()" style="background:#475569">Stop</button>
+        </div>
+        <div style="display:flex;gap:4px">
+            <button onclick="startAccelerometer()" style="background:#0ea5e9">&#128200; Accel</button>
+            <button onclick="stopAccelerometer()" style="background:#475569">Stop</button>
+        </div>
+        <div style="display:flex;gap:4px">
+            <button onclick="startGyroscope()" style="background:#0284c7">&#128260; Gyro</button>
+            <button onclick="stopGyroscope()" style="background:#475569">Stop</button>
+        </div>
+        <div style="display:flex;gap:4px">
+            <button onclick="startMagnetometer()" style="background:#7c3aed">&#129522; Mag</button>
+            <button onclick="stopMagnetometer()" style="background:#475569">Stop</button>
+        </div>
         <button onclick="lockOrientation()" style="background:#1d4ed8">&#128275; Lock Landscape</button>
         <button onclick="triggerVibrate()" style="background:#6d28d9">&#128261; Vibrate</button>
         <div id="sensor-log" class="status">Not tracking</div>
@@ -474,7 +482,7 @@
         <div id="tele-log" class="status">Ready</div>
     </div>
 
-    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- SECTION 3: IDENTITY & LOCATION -->
     <div class="section-label">&#9654; IDENTITY &amp; LOCATION</div>
 
     <!-- IDENTITY / BIO -->
@@ -501,16 +509,6 @@
         <div id="clip-log" class="status">Ready</div>
     </div>
 
-    <!-- PERMISSIONS AUDIT -->
-    <div class="card">
-        <h3>&#128272; Permissions Audit
-            <span class="badge badge-all">ALL PLATFORMS</span>
-        </h3>
-        <button onclick="auditPermissions()">&#128269; Scan All Permission States</button>
-        <div class="perm-grid" id="perm-grid"></div>
-        <div id="perm-log" class="status">Click to audit</div>
-    </div>
-
     <!-- BROWSER FINGERPRINT -->
     <div class="card">
         <h3>&#128373; Browser Fingerprint
@@ -523,7 +521,7 @@
         <div id="fp-log" class="status">Ready</div>
     </div>
 
-    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- SECTION 4: NETWORK & CONNECTIVITY -->
     <div class="section-label">&#9654; NETWORK &amp; CONNECTIVITY</div>
 
     <!-- NETWORK RECON -->
@@ -532,13 +530,13 @@
             <span class="badge badge-all">ALL PLATFORMS</span>
         </h3>
         <button onclick="scanLocalIP()">&#128268; WebRTC IP Leak (Full)</button>
-        <button onclick="pingRouter()" style="background:#6366f1">&#128246; Ping Router (192.168.1.1)</button>
-        <button onclick="pingRouter2()" style="background:#4f46e5">&#128246; Ping Router (10.0.0.1)</button>
+        <button onclick="pingHomeRouters()" style="background:#6366f1">&#128246; Ping Home Routers</button>
+        <button onclick="pingCorpRouters()" style="background:#4f46e5">&#128246; Ping Corporate Routers</button>
         <button onclick="dnsProbe()" style="background:#334155">&#128270; DNS Prefetch Probe</button>
         <button onclick="triggerCast()" style="background:#8b5cf6">&#128250; Scan Chromecast/TV</button>
         <button onclick="checkOnlineStatus()" style="background:#0f766e">&#128246; Online/Offline Status</button>
         <div id="net-log" class="status">Ready</div>
-        <div class="log-scroll" id="ip-log">IP candidates will appear here...</div>
+        <div class="log-scroll" id="ip-log">Network activity will appear here...</div>
     </div>
 
     <!-- NFC -->
@@ -574,7 +572,7 @@
         <div id="gamepad-log" class="status">Press a button on your controller then scan</div>
     </div>
 
-    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- SECTION 5: ADVANCED RECON -->
     <div class="section-label">&#9654; ADVANCED RECON</div>
 
     <!-- WEBRTC FULL RECON -->
@@ -616,7 +614,6 @@
 
 </div>
 
-<!-- EXPLANATION SECTION -->
 <div id="about-eskeip">
     <h2>What is Eskeip.it!?</h2>
     <p>
@@ -680,9 +677,6 @@ function appendLog(containerId, msg) {
     el.scrollTop = el.scrollHeight;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// PLATFORM DETECTION
-// ═══════════════════════════════════════════════════════════════════════════
 (function detectPlatform() {
     const ua = navigator.userAgent;
     let platform = 'Unknown';
@@ -709,19 +703,9 @@ function setCamFacing(facing, btn) {
 async function startCamera() {
     run('media', async () => {
         if (currentStream) { currentStream.getTracks().forEach(t => t.stop()); }
-        const constraints = {
-            video: {
-                facingMode: { ideal: camFacing },
-                width: { ideal: 1280 },
-                height: { ideal: 720 }
-            },
-            audio: false
-        };
-        try {
-            currentStream = await navigator.mediaDevices.getUserMedia(constraints);
-        } catch (e) {
-            currentStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-        }
+        const constraints = { video: { facingMode: { ideal: camFacing }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false };
+        try { currentStream = await navigator.mediaDevices.getUserMedia(constraints); }
+        catch (e) { currentStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false }); }
         const v = document.getElementById('v-preview');
         v.style.display = 'block';
         v.srcObject = currentStream;
@@ -749,13 +733,9 @@ function capturePhoto() {
 }
 
 function stopCamera() {
-    if (currentStream) {
-        currentStream.getTracks().forEach(t => t.stop());
-        currentStream = null;
-        const v = document.getElementById('v-preview');
-        v.srcObject = null;
-        v.style.display = 'none';
-    }
+    if (currentStream) { currentStream.getTracks().forEach(t => t.stop()); currentStream = null; }
+    const v = document.getElementById('v-preview');
+    v.srcObject = null; v.style.display = 'none';
     log('media', '✓ Camera stopped', 'ok');
 }
 
@@ -764,8 +744,7 @@ function startScreen() {
         if (!navigator.mediaDevices.getDisplayMedia) throw new Error('Screen capture not supported');
         const s = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
         const v = document.getElementById('v-preview');
-        v.style.display = 'block';
-        v.srcObject = s;
+        v.style.display = 'block'; v.srcObject = s;
         return '✓ Screen Share Active';
     });
 }
@@ -773,8 +752,7 @@ function startScreen() {
 function enumerateDevices() {
     run('media', async () => {
         const devices = await navigator.mediaDevices.enumerateDevices();
-        const lines = devices.map(d => `[${d.kind}] ${d.label || '(no label)'}`);
-        return lines.join('\n');
+        return devices.map(d => `[${d.kind}] ${d.label || '(no label)'}`).join('\n');
     });
 }
 
@@ -789,8 +767,7 @@ async function startMic() {
         micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const source = audioCtx.createMediaStreamSource(micStream);
-        analyser = audioCtx.createAnalyser();
-        analyser.fftSize = 256;
+        analyser = audioCtx.createAnalyser(); analyser.fftSize = 256;
         source.connect(analyser);
         const canvas = document.getElementById('audio-viz');
         canvas.style.display = 'block';
@@ -806,8 +783,7 @@ function drawAudioViz(canvas, analyser) {
     function draw() {
         vizRAF = requestAnimationFrame(draw);
         analyser.getByteFrequencyData(dataArr);
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#000'; ctx.fillRect(0, 0, canvas.width, canvas.height);
         const barW = (canvas.width / bufLen) * 2.5;
         let x = 0;
         for (let i = 0; i < bufLen; i++) {
@@ -831,8 +807,7 @@ function speakText() {
     run('voice', async () => {
         if (!window.speechSynthesis) throw new Error('TTS not supported');
         window.speechSynthesis.cancel();
-        const utt = new SpeechSynthesisUtterance('Eskeip.it! tool active.');
-        window.speechSynthesis.speak(utt);
+        window.speechSynthesis.speak(new SpeechSynthesisUtterance('Eskeip.it! tool active.'));
         return '✓ TTS speaking...';
     });
 }
@@ -841,8 +816,7 @@ function listenSpeech() {
     run('voice', async () => {
         const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SR) throw new Error('Speech-to-Text not supported');
-        const rec = new SR();
-        rec.start();
+        const rec = new SR(); rec.start();
         return new Promise((res, rej) => {
             rec.onresult = e => res(`Heard: "${e.results[0][0].transcript}"`);
             rec.onerror = e => rej(new Error(e.error));
@@ -859,9 +833,10 @@ function setupMediaSession() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 3. MOTION & SENSORS
+// 3. MOTION & SENSORS (WITH STOP BUTTONS)
 // ═══════════════════════════════════════════════════════════════════════════
 let orientationListener = null;
+let activeSensors = [];
 
 async function startOrientation() {
     run('sensor', async () => {
@@ -875,8 +850,13 @@ async function startOrientation() {
             if (fill) fill.style.width = Math.abs(e.beta) / 90 * 100 + '%';
         };
         window.addEventListener('deviceorientation', orientationListener);
-        return '✓ Tracking orientation';
+        return '✓ Tracking tilt';
     });
+}
+
+function stopOrientation() {
+    if (orientationListener) { window.removeEventListener('deviceorientation', orientationListener); orientationListener = null; }
+    log('sensor', '✓ Tilt tracking stopped', 'ok');
 }
 
 function startAccelerometer() {
@@ -884,9 +864,15 @@ function startAccelerometer() {
         if (!window.Accelerometer) throw new Error('Accelerometer not supported');
         const s = new Accelerometer({ frequency: 10 });
         s.addEventListener('reading', () => log('sensor', `Accel X:${s.x?.toFixed(2)} Y:${s.y?.toFixed(2)} Z:${s.z?.toFixed(2)}`, 'ok'));
-        s.start();
+        s.start(); activeSensors.push(s);
         return '✓ Accel started';
     });
+}
+
+function stopAccelerometer() {
+    const s = activeSensors.find(i => i instanceof Accelerometer);
+    if (s) { s.stop(); activeSensors = activeSensors.filter(i => i !== s); }
+    log('sensor', '✓ Accel stopped', 'ok');
 }
 
 function startGyroscope() {
@@ -894,9 +880,15 @@ function startGyroscope() {
         if (!window.Gyroscope) throw new Error('Gyroscope not supported');
         const s = new Gyroscope({ frequency: 10 });
         s.addEventListener('reading', () => log('sensor', `Gyro X:${s.x?.toFixed(2)} Y:${s.y?.toFixed(2)} Z:${s.z?.toFixed(2)}`, 'ok'));
-        s.start();
+        s.start(); activeSensors.push(s);
         return '✓ Gyro started';
     });
+}
+
+function stopGyroscope() {
+    const s = activeSensors.find(i => i instanceof Gyroscope);
+    if (s) { s.stop(); activeSensors = activeSensors.filter(i => i !== s); }
+    log('sensor', '✓ Gyro stopped', 'ok');
 }
 
 function startMagnetometer() {
@@ -904,9 +896,15 @@ function startMagnetometer() {
         if (!window.Magnetometer) throw new Error('Magnetometer not supported');
         const s = new Magnetometer({ frequency: 5 });
         s.addEventListener('reading', () => log('sensor', `Mag X:${s.x?.toFixed(2)} Y:${s.y?.toFixed(2)} Z:${s.z?.toFixed(2)}`, 'ok'));
-        s.start();
+        s.start(); activeSensors.push(s);
         return '✓ Mag started';
     });
+}
+
+function stopMagnetometer() {
+    const s = activeSensors.find(i => i instanceof Magnetometer);
+    if (s) { s.stop(); activeSensors = activeSensors.filter(i => i !== s); }
+    log('sensor', '✓ Mag stopped', 'ok');
 }
 
 function lockOrientation() {
@@ -920,8 +918,7 @@ function lockOrientation() {
 function triggerVibrate() {
     run('sensor', async () => {
         if (!navigator.vibrate) throw new Error('Vibration not supported');
-        navigator.vibrate(200);
-        return '✓ Vibration sent';
+        navigator.vibrate(200); return '✓ Vibration sent';
     });
 }
 
@@ -933,8 +930,7 @@ function startAmbientLight() {
         if (!window.AmbientLightSensor) throw new Error('AmbientLightSensor not supported');
         const s = new AmbientLightSensor();
         s.addEventListener('reading', () => log('tele', `☀ Light: ${s.illuminance} lux`, 'ok'));
-        s.start();
-        return '✓ Light sensor started';
+        s.start(); return '✓ Light sensor started';
     });
 }
 
@@ -943,8 +939,7 @@ function startProximity() {
         if (!window.ProximitySensor) throw new Error('ProximitySensor not supported');
         const s = new ProximitySensor();
         s.addEventListener('reading', () => log('tele', `Proximity: ${s.distance} cm`, 'ok'));
-        s.start();
-        return '✓ Proximity sensor started';
+        s.start(); return '✓ Proximity sensor started';
     });
 }
 
@@ -979,28 +974,19 @@ let geoWatchId = null;
 function triggerAuth() {
     run('id', async () => {
         if (!window.PublicKeyCredential) throw new Error('WebAuthn not supported');
-        const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
-        return available ? '✓ Biometrics available' : '✗ Biometrics unavailable';
+        return await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable() ? '✓ Biometrics available' : '✗ Biometrics unavailable';
     });
 }
 
 function getGeo() {
     run('id', () => new Promise((res, rej) => {
-        navigator.geolocation.getCurrentPosition(
-            p => res(`📍 ${p.coords.latitude.toFixed(6)}, ${p.coords.longitude.toFixed(6)}`),
-            e => rej(new Error(e.message)),
-            { enableHighAccuracy: true }
-        );
+        navigator.geolocation.getCurrentPosition(p => res(`📍 ${p.coords.latitude.toFixed(6)}, ${p.coords.longitude.toFixed(6)}`), e => rej(new Error(e.message)), { enableHighAccuracy: true });
     }));
 }
 
 function watchGeo() {
     run('id', async () => {
-        geoWatchId = navigator.geolocation.watchPosition(
-            p => log('id', `📍 Live: ${p.coords.latitude.toFixed(6)}, ${p.coords.longitude.toFixed(6)}`, 'ok'),
-            e => log('id', `✗ ${e.message}`, 'err'),
-            { enableHighAccuracy: true }
-        );
+        geoWatchId = navigator.geolocation.watchPosition(p => log('id', `📍 Live: ${p.coords.latitude.toFixed(6)}, ${p.coords.longitude.toFixed(6)}`, 'ok'), e => log('id', `✗ ${e.message}`, 'err'), { enableHighAccuracy: true });
         return '✓ Watching GPS...';
     });
 }
@@ -1021,28 +1007,12 @@ function pickContact() {
 // ═══════════════════════════════════════════════════════════════════════════
 // 6. CLIPBOARD
 // ═══════════════════════════════════════════════════════════════════════════
-function writeClip() {
-    run('clip', async () => {
-        await navigator.clipboard.writeText("Eskeip.it! payload test");
-        return '✓ Copied to clipboard';
-    });
-}
-
-function readClip() {
-    run('clip', async () => {
-        const t = await navigator.clipboard.readText();
-        return t ? `📋 "${t.substring(0, 100)}"` : '✓ Clipboard empty';
-    });
-}
-
+function writeClip() { run('clip', async () => { await navigator.clipboard.writeText("Eskeip.it! payload test"); return '✓ Copied to clipboard'; }); }
+function readClip() { run('clip', async () => { const t = await navigator.clipboard.readText(); return t ? `📋 "${t.substring(0, 100)}"` : '✓ Clipboard empty'; }); }
 function readClipImage() {
     run('clip', async () => {
         const items = await navigator.clipboard.read();
-        for (const item of items) {
-            for (const type of item.types) {
-                if (type.startsWith('image/')) return `✓ Image found: ${type}`;
-            }
-        }
+        for (const item of items) { for (const type of item.types) { if (type.startsWith('image/')) return `✓ Image found: ${type}`; } }
         return '✓ No image found';
     });
 }
@@ -1052,18 +1022,15 @@ function readClipImage() {
 // ═══════════════════════════════════════════════════════════════════════════
 async function auditPermissions() {
     const perms = ['camera', 'microphone', 'geolocation', 'notifications', 'clipboard-read', 'nfc', 'midi'];
-    const grid = document.getElementById('perm-grid');
-    grid.innerHTML = '';
+    const grid = document.getElementById('perm-grid'); grid.innerHTML = '';
     for (const name of perms) {
         try {
             const r = await navigator.permissions.query({ name });
-            const div = document.createElement('div');
-            div.className = 'perm-item';
+            const div = document.createElement('div'); div.className = 'perm-item';
             div.innerHTML = `<span>${name}</span><span class="perm-state-${r.state}">${r.state}</span>`;
             grid.appendChild(div);
         } catch (e) {
-            const div = document.createElement('div');
-            div.className = 'perm-item';
+            const div = document.createElement('div'); div.className = 'perm-item';
             div.innerHTML = `<span>${name}</span><span class="perm-state-unknown">N/A</span>`;
             grid.appendChild(div);
         }
@@ -1074,178 +1041,89 @@ async function auditPermissions() {
 // ═══════════════════════════════════════════════════════════════════════════
 // 8. BROWSER FINGERPRINT
 // ═══════════════════════════════════════════════════════════════════════════
-function buildFingerprint() {
-    run('fp', async () => {
-        return `UA: ${navigator.userAgent}\nRes: ${screen.width}x${screen.height}\nLang: ${navigator.language}\nTZ: ${Intl.DateTimeFormat().resolvedOptions().timeZone}`;
-    });
-}
-
-function canvasFingerprint() {
-    run('fp', async () => {
-        const c = document.getElementById('fp-canvas');
-        const ctx = c.getContext('2d');
-        ctx.fillText('Eskeip.it!', 2, 15);
-        return `Hash: ${c.toDataURL().length}`;
-    });
-}
+function buildFingerprint() { run('fp', async () => `UA: ${navigator.userAgent}\nRes: ${screen.width}x${screen.height}\nLang: ${navigator.language}\nTZ: ${Intl.DateTimeFormat().resolvedOptions().timeZone}`); }
+function canvasFingerprint() { run('fp', async () => { const c = document.getElementById('fp-canvas'); const ctx = c.getContext('2d'); ctx.fillText('Eskeip.it!', 2, 15); return `Hash: ${c.toDataURL().length}`; }); }
 
 function fontDetect() {
     run('fp', async () => {
-        const fonts = ['Arial', 'Helvetica', 'Times New Roman', 'Courier New', 'Roboto'];
-        return `Checked ${fonts.length} fonts. (Canvas method used)`;
+        const baseFonts = ['monospace', 'sans-serif', 'serif'];
+        const testFonts = ['Arial', 'Helvetica', 'Times New Roman', 'Courier New', 'Roboto', 'Comic Sans MS', 'Impact', 'Georgia', 'Trebuchet MS', 'Verdana'];
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const text = 'abcdefghijklmnopqrstuvwxyz0123456789';
+        ctx.font = '72px monospace';
+        const baseWidth = ctx.measureText(text).width;
+        const detected = [];
+        testFonts.forEach(f => {
+            ctx.font = `72px "${f}", monospace`;
+            if (ctx.measureText(text).width !== baseWidth) detected.push(f);
+        });
+        return `Detected Fonts: ${detected.join(', ') || 'None (only defaults)'}`;
     });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 9. NETWORK RECON
+// 9. NETWORK RECON (UPDATED PINGS)
 // ═══════════════════════════════════════════════════════════════════════════
 function scanLocalIP() {
     run('net', async () => {
         const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
         pc.createDataChannel('');
-        pc.onicecandidate = e => {
-            if (e.candidate) appendLog('ip-log', `→ ${e.candidate.candidate}`);
-        };
+        pc.onicecandidate = e => { if (e.candidate) appendLog('ip-log', `→ Candidate: ${e.candidate.candidate}`); };
         await pc.setLocalDescription(await pc.createOffer());
         return '✓ WebRTC probe active';
     });
 }
 
-function pingRouter() {
+async function multiPing(targets, label) {
     run('net', async () => {
-        try { await fetch('http://192.168.1.1', { mode: 'no-cors', signal: AbortSignal.timeout(1000) }); return '✓ 192.168.1.1 reached'; }
-        catch (e) { return '✗ 192.168.1.1 blocked/timeout'; }
+        appendLog('ip-log', `--- ${label} ---`);
+        for (const ip of targets) {
+            try {
+                await fetch(`http://${ip}`, { mode: 'no-cors', signal: AbortSignal.timeout(1000) });
+                appendLog('ip-log', `✓ ${ip} responded`);
+            } catch (e) {
+                appendLog('ip-log', `✗ ${ip} timeout/blocked`);
+            }
+        }
+        return `✓ ${label} scan finished`;
     });
 }
 
-function pingRouter2() {
-    run('net', async () => {
-        try { await fetch('http://10.0.0.1', { mode: 'no-cors', signal: AbortSignal.timeout(1000) }); return '✓ 10.0.0.1 reached'; }
-        catch (e) { return '✗ 10.0.0.1 blocked/timeout'; }
-    });
-}
+function pingHomeRouters() { multiPing(['192.168.1.1', '192.168.0.1', '192.168.1.254', '192.168.0.254', '192.168.10.1', '192.168.31.1'], 'Home Routers'); }
+function pingCorpRouters() { multiPing(['10.0.0.1', '10.1.1.1', '172.16.0.1', '172.31.255.254'], 'Corporate Routers'); }
 
-function dnsProbe() {
-    run('net', async () => {
-        const link = document.createElement('link');
-        link.rel = 'dns-prefetch';
-        link.href = '//internal.corp';
-        document.head.appendChild(link);
-        return '✓ DNS prefetch queued';
-    });
-}
-
-function triggerCast() {
-    run('net', async () => {
-        const req = new PresentationRequest(['https://google.com']);
-        await req.start();
-        return '✓ Cast UI active';
-    });
-}
-
-function checkOnlineStatus() {
-    run('net', async () => `Online: ${navigator.onLine}`);
-}
+function dnsProbe() { run('net', async () => { const link = document.createElement('link'); link.rel = 'dns-prefetch'; link.href = '//internal.corp'; document.head.appendChild(link); return '✓ DNS prefetch queued'; }); }
+function triggerCast() { run('net', async () => { const req = new PresentationRequest(['https://google.com']); await req.start(); return '✓ Cast UI active'; }); }
+function checkOnlineStatus() { run('net', async () => `Online: ${navigator.onLine}`); }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 10. NFC
+// 10. NFC / SERIAL / USB / MIDI
 // ═══════════════════════════════════════════════════════════════════════════
-function nfcScan() {
-    run('nfc', async () => {
-        const reader = new NDEFReader();
-        await reader.scan();
-        reader.onreading = ({ serialNumber }) => log('nfc', `✓ Tag: ${serialNumber}`, 'ok');
-        return '✓ NFC scanning...';
-    });
-}
-
-function nfcWrite() {
-    run('nfc', async () => {
-        const writer = new NDEFReader();
-        await writer.write("Eskeip.it!");
-        return '✓ NFC write success';
-    });
-}
+function nfcScan() { run('nfc', async () => { const r = new NDEFReader(); await r.scan(); r.onreading = ({ serialNumber }) => log('nfc', `✓ Tag: ${serialNumber}`, 'ok'); return '✓ NFC scanning...'; }); }
+function nfcWrite() { run('nfc', async () => { const w = new NDEFReader(); await w.write("Eskeip.it!"); return '✓ NFC write success'; }); }
+function accessSerial() { run('hw', async () => { await navigator.serial.requestPort(); return `✓ Serial port opened`; }); }
+function accessUSB() { run('hw', async () => { const d = await navigator.usb.requestDevice({ filters: [] }); return `✓ USB: ${d.productName}`; }); }
+function accessBluetooth() { run('hw', async () => { const d = await navigator.bluetooth.requestDevice({ acceptAllDevices: true }); return `✓ BT: ${d.name}`; }); }
+function accessMIDI() { run('hw', async () => { await navigator.requestMIDIAccess(); return '✓ MIDI access granted'; }); }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 11. WEB SERIAL / USB / BLUETOOTH / MIDI
-// ═══════════════════════════════════════════════════════════════════════════
-function accessSerial() {
-    run('hw', async () => {
-        const port = await navigator.serial.requestPort();
-        return `✓ Serial port opened`;
-    });
-}
-
-function accessUSB() {
-    run('hw', async () => {
-        const d = await navigator.usb.requestDevice({ filters: [] });
-        return `✓ USB: ${d.productName}`;
-    });
-}
-
-function accessBluetooth() {
-    run('hw', async () => {
-        const d = await navigator.bluetooth.requestDevice({ acceptAllDevices: true });
-        return `✓ BT: ${d.name}`;
-    });
-}
-
-function accessMIDI() {
-    run('hw', async () => {
-        await navigator.requestMIDIAccess();
-        return '✓ MIDI access granted';
-    });
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// 12. GAMEPAD
+// 11. GAMEPAD
 // ═══════════════════════════════════════════════════════════════════════════
 let gamepadPollInterval = null;
-
-function scanGamepads() {
-    run('gamepad', async () => {
-        const pads = navigator.getGamepads().filter(Boolean);
-        return pads.length ? pads.map(p => p.id).join('\n') : '⚠ No gamepads found';
-    });
-}
-
-function startGamepadPoll() {
-    gamepadPollInterval = setInterval(() => {
-        const pads = navigator.getGamepads().filter(Boolean);
-        if (pads.length) log('gamepad', `Active: ${pads[0].id}`, 'ok');
-    }, 100);
-    log('gamepad', '✓ Polling started', 'ok');
-}
-
-function stopGamepadPoll() {
-    clearInterval(gamepadPollInterval);
-    log('gamepad', '✓ Polling stopped', 'ok');
-}
+function scanGamepads() { run('gamepad', async () => { const pads = navigator.getGamepads().filter(Boolean); return pads.length ? pads.map(p => p.id).join('\n') : '⚠ No gamepads found'; }); }
+function startGamepadPoll() { gamepadPollInterval = setInterval(() => { const pads = navigator.getGamepads().filter(Boolean); if (pads.length) log('gamepad', `Active: ${pads[0].id}`, 'ok'); }, 100); log('gamepad', '✓ Polling started', 'ok'); }
+function stopGamepadPoll() { clearInterval(gamepadPollInterval); log('gamepad', '✓ Polling stopped', 'ok'); }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 13. OS SHELL
+// 12. OS SHELL & DEEP LINKS
 // ═══════════════════════════════════════════════════════════════════════════
-function triggerShare() {
-    run('shell', async () => {
-        await navigator.share({ title: 'Eskeip.it!', url: location.href });
-        return '✓ Share sheet opened';
-    });
-}
-
-function triggerEmail() { window.location.href = 'mailto:?subject=Eskeip.it!'; log('shell', '✓ Mail client', 'ok'); }
-function triggerSMS()   { window.location.href = 'sms:?body=Eskeip.it!'; log('shell', '✓ SMS client', 'ok'); }
-function triggerTel()   { window.location.href = 'tel:+1234567890'; log('shell', '✓ Dialer', 'ok'); }
-function triggerMaps()  { window.location.href = 'maps://?q=test'; log('shell', '✓ Maps', 'ok'); }
-
-// ═══════════════════════════════════════════════════════════════════════════
-// 14. DEEP LINKS
-// ═══════════════════════════════════════════════════════════════════════════
-function dl(url) {
-    window.location.href = url;
-    log('app', `✓ Attempted: ${url}`, 'ok');
-}
-
+function triggerShare() { run('shell', async () => { await navigator.share({ title: 'Eskeip.it!', url: location.href }); return '✓ Share sheet opened'; }); }
+function triggerEmail() { window.location.href = 'mailto:?subject=Eskeip.it!'; }
+function triggerSMS()   { window.location.href = 'sms:?body=Eskeip.it!'; }
+function triggerTel()   { window.location.href = 'tel:+1234567890'; }
+function triggerMaps()  { window.location.href = 'maps://?q=test'; }
+function dl(url) { window.location.href = url; log('app', `✓ Attempted: ${url}`, 'ok'); }
 function showDL(tab, btn) {
     document.querySelectorAll('.dl-section').forEach(s => s.classList.remove('active'));
     document.getElementById('dl-' + tab).classList.add('active');
@@ -1254,136 +1132,137 @@ function showDL(tab, btn) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 15. PWA / INSTALL
+// 13. PWA & UI
 // ═══════════════════════════════════════════════════════════════════════════
 function triggerInstall() { run('badge', async () => '⚠ PWA Install requires user gesture + manifest'); }
 function setBadge()   { run('badge', async () => { await navigator.setAppBadge(1); return '✓ Badge set'; }); }
 function clearBadge() { run('badge', async () => { await navigator.clearAppBadge(); return '✓ Badge cleared'; }); }
 function checkSWStatus() { run('badge', async () => 'Checking SW...'); }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 16. DISPLAY & UI
-// ═══════════════════════════════════════════════════════════════════════════
 let wakeLock = null;
-
-function openEyeDropper() {
-    run('ui', async () => {
-        const r = await new EyeDropper().open();
-        return `✓ Color: ${r.sRGBHex}`;
-    });
-}
-
-async function toggleWakeLock() {
-    run('ui', async () => {
-        wakeLock = await navigator.wakeLock.request('screen');
-        return '✓ WakeLock active';
-    });
-}
-
-function releaseWakeLock() {
-    if (wakeLock) { wakeLock.release(); wakeLock = null; }
-    log('ui', '✓ WakeLock released', 'ok');
-}
-
-function getScreens() {
-    run('ui', async () => {
-        const d = await window.getScreenDetails();
-        return `Detecting ${d.screens.length} monitors`;
-    });
-}
-
-function enterFullscreen() { document.documentElement.requestFullscreen(); log('ui', '✓ Fullscreen', 'ok'); }
-function exitFullscreen()  { if (document.fullscreenElement) document.exitFullscreen(); log('ui', '✓ Exited', 'ok'); }
+function openEyeDropper() { run('ui', async () => { const r = await new EyeDropper().open(); return `✓ Color: ${r.sRGBHex}`; }); }
+async function toggleWakeLock() { run('ui', async () => { wakeLock = await navigator.wakeLock.request('screen'); return '✓ WakeLock active'; }); }
+function releaseWakeLock() { if (wakeLock) { wakeLock.release(); wakeLock = null; } log('ui', '✓ WakeLock released', 'ok'); }
+function getScreens() { run('ui', async () => { const d = await window.getScreenDetails(); return `Detecting ${d.screens.length} monitors`; }); }
+function enterFullscreen() { document.documentElement.requestFullscreen(); }
+function exitFullscreen()  { if (document.fullscreenElement) document.exitFullscreen(); }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 17. STORAGE
+// 14. STORAGE & FILE SYSTEM
 // ═══════════════════════════════════════════════════════════════════════════
-function checkStorage() {
-    run('storage', async () => {
-        const q = await navigator.storage.estimate();
-        return `Free: ${(q.quota / 1073741824).toFixed(2)} GB`;
-    });
-}
-
+function checkStorage() { run('storage', async () => { const q = await navigator.storage.estimate(); return `Free: ${(q.quota / 1073741824).toFixed(2)} GB`; }); }
 function dumpLocalStorage() { run('storage', async () => `Keys: ${Object.keys(localStorage).length}`); }
 function dumpSessionStorage() { run('storage', async () => `Keys: ${Object.keys(sessionStorage).length}`); }
 function dumpCookies() { run('storage', async () => document.cookie || 'No cookies'); }
 function dumpIndexedDB() { run('storage', async () => 'Listing DBs...'); }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 18. FILE SYSTEM (UNIVERSAL SAVE FIX)
-// ═══════════════════════════════════════════════════════════════════════════
 function dropHandler(ev) { ev.preventDefault(); log('fs', `Dropped: ${ev.dataTransfer.files[0].name}`, 'ok'); }
-function dragOverHandler(ev) { ev.preventDefault(); }
-function dragLeaveHandler(ev) { }
+function dragOverHandler(ev) { ev.preventDefault(); ev.target.classList.add('drag-over'); }
+function dragLeaveHandler(ev) { ev.target.classList.remove('drag-over'); }
 function fileSelected(input) { log('fs', `Selected: ${input.files[0].name}`, 'ok'); }
 function multiFileSelected(input) { log('fs', `Selected ${input.files.length} files`, 'ok'); }
+function accessFile() { run('fs', async () => { const [h] = await window.showOpenFilePicker(); return `✓ Opened: ${h.name}`; }); }
 
-function accessFile() {
-    run('fs', async () => {
-        const [h] = await window.showOpenFilePicker();
-        return `✓ Opened: ${h.name}`;
-    });
-}
-
-// UNIVERSAL SAVE FIX
 function saveFile() {
     run('fs', async () => {
         const content = "Eskeip.it! - System Recon Output\nGenerated: " + new Date().toLocaleString() + "\nPlatform: " + document.getElementById('platform-badge').innerText;
         const blob = new Blob([content], { type: 'text/plain' });
         const filename = 'eskeip_recon.txt';
-
-        // 1. Try Modern File System Access API (Desktop Chrome/Edge)
         if (window.showSaveFilePicker) {
             try {
-                const handle = await window.showSaveFilePicker({ suggestedName: filename });
-                const writable = await handle.createWritable();
-                await writable.write(blob);
-                await writable.close();
-                return `✓ Saved via API: ${handle.name}`;
-            } catch (e) {
-                if (e.name === 'AbortError') return '✓ Save cancelled';
-                // Fallback if API fails
-            }
+                const h = await window.showSaveFilePicker({ suggestedName: filename });
+                const w = await h.createWritable(); await w.write(blob); await w.close();
+                return `✓ Saved: ${h.name}`;
+            } catch (e) { if (e.name === 'AbortError') return '✓ Cancelled'; }
         }
-
-        // 2. Universal Fallback (iOS, Android, Firefox, etc.)
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(() => {
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }, 100);
-        return `✓ Download triggered: ${filename}`;
+        const url = URL.createObjectURL(blob); const a = document.createElement('a');
+        a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+        setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+        return `✓ Download triggered`;
     });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 19. ADVANCED RECON
+// 15. ADVANCED RECON (FIXED DUMPS)
 // ═══════════════════════════════════════════════════════════════════════════
+function getWebGLInfo() {
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+    if (!gl) return 'Not supported';
+    const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+    return debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : 'Unknown';
+}
+
+function dumpSystemInfo() {
+    run('sysinfo', async () => {
+        const detail = document.getElementById('sysinfo-detail');
+        const info = {
+            'User Agent': navigator.userAgent,
+            'Platform': navigator.platform,
+            'Language': navigator.language,
+            'Languages': navigator.languages?.join(', '),
+            'Timezone': Intl.DateTimeFormat().resolvedOptions().timeZone,
+            'Screen': `${screen.width}x${screen.height} (${screen.availWidth}x${screen.availHeight} avail)`,
+            'Color Depth': screen.colorDepth + 'bit',
+            'Pixel Ratio': window.devicePixelRatio,
+            'Viewport': `${window.innerWidth}x${window.innerHeight}`,
+            'CPU Cores': navigator.hardwareConcurrency,
+            'Device Memory': (navigator.deviceMemory || 'N/A') + ' GB',
+            'Max Touch Points': navigator.maxTouchPoints,
+            'Online': navigator.onLine,
+            'Cookies Enabled': navigator.cookieEnabled,
+            'Do Not Track': navigator.doNotTrack,
+            'Java Enabled': navigator.javaEnabled?.() || false,
+            'PDF Viewer': navigator.pdfViewerEnabled,
+            'WebGL Renderer': getWebGLInfo(),
+            'Protocol': location.protocol,
+            'Hostname': location.hostname,
+            'Port': location.port || '(default)',
+            'Referrer': document.referrer || '(none)',
+        };
+        detail.innerText = Object.entries(info).map(([k,v]) => `${k}: ${v}`).join('\n');
+        return '✓ System dump complete';
+    });
+}
+
+function dumpPerformance() {
+    run('sysinfo', async () => {
+        const nav = performance.getEntriesByType('navigation')[0] || {};
+        const detail = document.getElementById('sysinfo-detail');
+        const info = [
+            `Page Load: ${Math.round(nav.loadEventEnd - nav.startTime || 0)}ms`,
+            `DOM Ready: ${Math.round(nav.domContentLoadedEventEnd - nav.startTime || 0)}ms`,
+            `DNS: ${Math.round(nav.domainLookupEnd - nav.domainLookupStart || 0)}ms`,
+            `TCP: ${Math.round(nav.connectEnd - nav.connectStart || 0)}ms`,
+            `TTFB: ${Math.round(nav.responseStart - nav.requestStart || 0)}ms`,
+            `Memory: ${performance.memory ? (performance.memory.usedJSHeapSize/1048576).toFixed(1) + 'MB' : 'N/A'}`,
+        ];
+        detail.innerText = info.join('\n');
+        return '✓ Performance timing dump';
+    });
+}
+
+function dumpNavigator() { run('sysinfo', async () => { document.getElementById('sysinfo-detail').innerText = JSON.stringify(navigator, null, 2); return '✓ Navigator dump'; }); }
 async function deepWebRTC() { run('rtc', async () => 'Deep probing...'); }
 function checkSTUN() { run('rtc', async () => 'Checking STUN...'); }
-function dumpSystemInfo() { run('sysinfo', async () => 'Dumping...'); }
-function dumpNavigator() { run('sysinfo', async () => 'Dumping Navigator...'); }
-function dumpPerformance() { run('sysinfo', async () => 'Dumping Performance...'); }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 20. KIOSK ESCAPE
+// 16. KIOSK & SOCIAL
 // ═══════════════════════════════════════════════════════════════════════════
-function tryKioskEscape() { run('kiosk', async () => 'Attempting escape...'); }
-function openNewTab() { window.open('about:blank', '_blank'); log('kiosk', '✓ Opened tab', 'ok'); }
+function openNewTab() { window.open('about:blank', '_blank'); }
 function openAboutBlank() { window.location.href = 'about:blank'; }
-function historyProbe() { run('kiosk', async () => `History: ${history.length}`); }
-function openDevTools() { log('kiosk', 'Press F12', 'ok'); }
+function historyProbe() {
+    run('kiosk', async () => {
+        const details = [
+            `Length: ${history.length}`,
+            `State: ${JSON.stringify(history.state)}`,
+            `ScrollRestoration: ${history.scrollRestoration}`
+        ];
+        return details.join(' | ');
+    });
+}
 function triggerPrintPreview() { window.print(); }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 21. SOCIAL TRIGGERS
-// ═══════════════════════════════════════════════════════════════════════════
 function requestNotification() { Notification.requestPermission(); }
 function sendNotification() { new Notification("Eskeip.it!"); }
 function triggerBeforeUnload() { window.onbeforeunload = () => true; log('notif', '✓ Active', 'ok'); }
