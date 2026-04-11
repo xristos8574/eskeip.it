@@ -143,6 +143,17 @@
         button:active { transform: scale(0.97); }
         button:disabled { opacity: 0.4; cursor: not-allowed; }
 
+        input[type="text"] {
+            width: 100%;
+            padding: 8px 10px;
+            margin-top: 6px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: #1e293b;
+            color: var(--text);
+            font-size: 0.8rem;
+        }
+
         .status {
             margin-top: 8px;
             font-size: 0.72rem;
@@ -198,12 +209,12 @@
         .sensor-fill { height: 100%; border-radius: 3px; background: var(--accent); transition: width 0.1s; width: 0%; }
 
         .log-scroll {
-            max-height: 120px;
+            max-height: 180px;
             overflow-y: auto;
             font-size: 0.68rem;
             font-family: monospace;
             background: rgba(0,0,0,0.4);
-            padding: 6px 8px;
+            padding: 8px 10px;
             border-radius: 6px;
             border: 1px solid #1e293b;
             margin-top: 6px;
@@ -291,7 +302,7 @@
         <div id="fs-log" class="status">Ready</div>
     </div>
 
-    <!-- PERMISSIONS AUDIT (MOVED HERE) -->
+    <!-- PERMISSIONS AUDIT -->
     <div class="card">
         <h3>&#128272; Permissions Audit
             <span class="badge badge-all">ALL PLATFORMS</span>
@@ -366,7 +377,7 @@
         <div id="badge-log" class="status">PWA install requires HTTPS + manifest</div>
     </div>
 
-    <!-- DISPLAY / UI -->
+    <!-- DISPLAY / UI CONTROL -->
     <div class="card">
         <h3>&#128444; Display &amp; UI Control
             <span class="badge badge-all">ALL PLATFORMS</span>
@@ -421,7 +432,6 @@
         <button onclick="capturePhoto()" style="background:#10b981">&#128247; Capture Photo</button>
         <button onclick="stopCamera()" style="background:#475569">Stop Stream</button>
         <button onclick="startScreen()" style="background:#ef4444">&#128250; Screen Share (Desktop)</button>
-        <button onclick="enumerateDevices()" style="background:#7c3aed">&#128269; List All Media Devices</button>
         <video id="v-preview" autoplay muted playsinline webkit-playsinline></video>
         <canvas id="photo-canvas" style="display:none"></canvas>
         <div id="media-log" class="status">Idle</div>
@@ -436,7 +446,6 @@
         <button onclick="stopMic()" style="background:#475569">Stop Mic</button>
         <button onclick="speakText()" style="background:#f43f5e">&#128266; Text-to-Speech</button>
         <button onclick="listenSpeech()" style="background:#e11d48">&#127897; Speech-to-Text</button>
-        <button onclick="setupMediaSession()" style="background:#be123c">&#127911; Set OS "Now Playing"</button>
         <canvas id="audio-viz"></canvas>
         <div id="voice-log" class="status">Idle</div>
     </div>
@@ -530,11 +539,18 @@
             <span class="badge badge-all">ALL PLATFORMS</span>
         </h3>
         <button onclick="scanLocalIP()">&#128268; WebRTC IP Leak (Full)</button>
+        <button onclick="checkInternet()" style="background:#10b981">&#127760; Connected to Internet?</button>
         <button onclick="pingHomeRouters()" style="background:#6366f1">&#128246; Ping Home Routers</button>
         <button onclick="pingCorpRouters()" style="background:#4f46e5">&#128246; Ping Corporate Routers</button>
+        
+        <input type="text" id="custom-ip" placeholder="Custom IP (e.g. 192.168.1.50)">
+        <button onclick="pingCustomIP()" style="background:#8b5cf6">&#128246; Custom IP Ping</button>
+
+        <input type="text" id="dns-target" placeholder="internal.corp">
         <button onclick="dnsProbe()" style="background:#334155">&#128270; DNS Prefetch Probe</button>
-        <button onclick="triggerCast()" style="background:#8b5cf6">&#128250; Scan Chromecast/TV</button>
-        <button onclick="checkOnlineStatus()" style="background:#0f766e">&#128246; Online/Offline Status</button>
+        
+        <button onclick="triggerCast()" style="background:#7c3aed">&#128250; Scan Chromecast/TV</button>
+        
         <div id="net-log" class="status">Ready</div>
         <div class="log-scroll" id="ip-log">Network activity will appear here...</div>
     </div>
@@ -707,10 +723,8 @@ async function startCamera() {
         try { currentStream = await navigator.mediaDevices.getUserMedia(constraints); }
         catch (e) { currentStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false }); }
         const v = document.getElementById('v-preview');
-        v.style.display = 'block';
-        v.srcObject = currentStream;
-        const track = currentStream.getVideoTracks()[0];
-        const settings = track.getSettings();
+        v.style.display = 'block'; v.srcObject = currentStream;
+        const settings = currentStream.getVideoTracks()[0].getSettings();
         return `✓ Camera: ${settings.width}x${settings.height} | facing: ${settings.facingMode || camFacing}`;
     });
 }
@@ -720,14 +734,10 @@ function capturePhoto() {
         const v = document.getElementById('v-preview');
         if (!v.srcObject) throw new Error('Start camera first');
         const canvas = document.getElementById('photo-canvas');
-        canvas.width = v.videoWidth || 640;
-        canvas.height = v.videoHeight || 480;
+        canvas.width = v.videoWidth; canvas.height = v.videoHeight;
         canvas.getContext('2d').drawImage(v, 0, 0);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
         const a = document.createElement('a');
-        a.href = dataUrl;
-        a.download = 'capture_' + Date.now() + '.jpg';
-        a.click();
+        a.href = canvas.toDataURL('image/jpeg', 0.9); a.download = 'capture_' + Date.now() + '.jpg'; a.click();
         return `✓ Photo captured: ${canvas.width}x${canvas.height}`;
     });
 }
@@ -746,13 +756,6 @@ function startScreen() {
         const v = document.getElementById('v-preview');
         v.style.display = 'block'; v.srcObject = s;
         return '✓ Screen Share Active';
-    });
-}
-
-function enumerateDevices() {
-    run('media', async () => {
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        return devices.map(d => `[${d.kind}] ${d.label || '(no label)'}`).join('\n');
     });
 }
 
@@ -824,16 +827,8 @@ function listenSpeech() {
     });
 }
 
-function setupMediaSession() {
-    run('voice', async () => {
-        if (!('mediaSession' in navigator)) throw new Error('MediaSession not supported');
-        navigator.mediaSession.metadata = new MediaMetadata({ title: 'Eskeip.it!', artist: 'System Probe' });
-        return '✓ OS UI updated';
-    });
-}
-
 // ═══════════════════════════════════════════════════════════════════════════
-// 3. MOTION & SENSORS (WITH STOP BUTTONS)
+// 3. MOTION & SENSORS
 // ═══════════════════════════════════════════════════════════════════════════
 let orientationListener = null;
 let activeSensors = [];
@@ -1063,15 +1058,61 @@ function fontDetect() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 9. NETWORK RECON (UPDATED PINGS)
+// 9. NETWORK RECON (REFINED WEBRTC & NEW TESTS)
 // ═══════════════════════════════════════════════════════════════════════════
 function scanLocalIP() {
     run('net', async () => {
         const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
         pc.createDataChannel('');
-        pc.onicecandidate = e => { if (e.candidate) appendLog('ip-log', `→ Candidate: ${e.candidate.candidate}`); };
+        const results = { local: [], public: [] };
+        pc.onicecandidate = e => {
+            if (e.candidate) {
+                const c = e.candidate.candidate;
+                const parts = c.split(' ');
+                const ip = parts[4];
+                const port = parts[5];
+                const type = parts[7];
+                if (type === 'host') {
+                    results.local.push({ ip, port });
+                } else if (type === 'srflx') {
+                    results.public.push({ ip, port });
+                }
+                updateWebRTCLog(results);
+            }
+        };
         await pc.setLocalDescription(await pc.createOffer());
         return '✓ WebRTC probe active';
+    });
+}
+
+function updateWebRTCLog(res) {
+    const el = document.getElementById('ip-log');
+    let html = '';
+    if (res.local.length) {
+        html += 'Local network identity:\n';
+        res.local.forEach(i => html += `- Hidden local hostname: ${i.ip}\n- Port: ${i.port}\n`);
+    }
+    if (res.public.length) {
+        html += '\nPublic internet identity:\n';
+        res.public.forEach(i => html += `- Public IP: ${i.ip}\n- Port: ${i.port}\n- Found through STUN\n`);
+    }
+    el.innerText = html || 'Gathering candidates...';
+}
+
+async function checkInternet() {
+    run('net', async () => {
+        appendLog('ip-log', '--- Internet Connectivity Test ---');
+        let success = false;
+        for (const ip of ['1.1.1.1', '8.8.8.8']) {
+            try {
+                await fetch(`https://${ip}`, { mode: 'no-cors', signal: AbortSignal.timeout(2000) });
+                appendLog('ip-log', `✓ ${ip} reachable`);
+                success = true;
+            } catch (e) {
+                appendLog('ip-log', `✗ ${ip} unreachable`);
+            }
+        }
+        return success ? '✓ Internet access confirmed' : '✗ No internet access detected';
     });
 }
 
@@ -1093,9 +1134,27 @@ async function multiPing(targets, label) {
 function pingHomeRouters() { multiPing(['192.168.1.1', '192.168.0.1', '192.168.1.254', '192.168.0.254', '192.168.10.1', '192.168.31.1'], 'Home Routers'); }
 function pingCorpRouters() { multiPing(['10.0.0.1', '10.1.1.1', '172.16.0.1', '172.31.255.254'], 'Corporate Routers'); }
 
-function dnsProbe() { run('net', async () => { const link = document.createElement('link'); link.rel = 'dns-prefetch'; link.href = '//internal.corp'; document.head.appendChild(link); return '✓ DNS prefetch queued'; }); }
+function pingCustomIP() {
+    const ip = document.getElementById('custom-ip').value.trim();
+    if (!ip) { log('net', '✗ Enter an IP', 'err'); return; }
+    multiPing([ip], 'Custom IP Ping');
+}
+
+function dnsProbe() {
+    run('net', async () => {
+        const domain = document.getElementById('dns-target').value.trim() || 'internal.corp';
+        const link = document.createElement('link');
+        link.rel = 'dns-prefetch';
+        link.href = `//${domain}`;
+        document.head.appendChild(link);
+        
+        const output = `DNS Probe\n\n- Target domain: ${domain}\n- Action: DNS prefetch requested\n- Status: queued (no direct result available)\n\nNote: Browser does not expose DNS resolution result for security reasons.`;
+        document.getElementById('ip-log').innerText = output;
+        return '✓ DNS prefetch queued';
+    });
+}
+
 function triggerCast() { run('net', async () => { const req = new PresentationRequest(['https://google.com']); await req.start(); return '✓ Cast UI active'; }); }
-function checkOnlineStatus() { run('net', async () => `Online: ${navigator.onLine}`); }
 
 // ═══════════════════════════════════════════════════════════════════════════
 // 10. NFC / SERIAL / USB / MIDI
@@ -1156,7 +1215,7 @@ function dumpSessionStorage() { run('storage', async () => `Keys: ${Object.keys(
 function dumpCookies() { run('storage', async () => document.cookie || 'No cookies'); }
 function dumpIndexedDB() { run('storage', async () => 'Listing DBs...'); }
 
-function dropHandler(ev) { ev.preventDefault(); log('fs', `Dropped: ${ev.dataTransfer.files[0].name}`, 'ok'); }
+function dropHandler(ev) { ev.preventDefault(); ev.target.classList.remove('drag-over'); log('fs', `Dropped: ${ev.dataTransfer.files[0].name}`, 'ok'); }
 function dragOverHandler(ev) { ev.preventDefault(); ev.target.classList.add('drag-over'); }
 function dragLeaveHandler(ev) { ev.target.classList.remove('drag-over'); }
 function fileSelected(input) { log('fs', `Selected: ${input.files[0].name}`, 'ok'); }
@@ -1183,7 +1242,7 @@ function saveFile() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 15. ADVANCED RECON (FIXED DUMPS)
+// 15. ADVANCED RECON
 // ═══════════════════════════════════════════════════════════════════════════
 function getWebGLInfo() {
     const canvas = document.createElement('canvas');
@@ -1253,11 +1312,7 @@ function openNewTab() { window.open('about:blank', '_blank'); }
 function openAboutBlank() { window.location.href = 'about:blank'; }
 function historyProbe() {
     run('kiosk', async () => {
-        const details = [
-            `Length: ${history.length}`,
-            `State: ${JSON.stringify(history.state)}`,
-            `ScrollRestoration: ${history.scrollRestoration}`
-        ];
+        const details = [`Length: ${history.length}`, `State: ${JSON.stringify(history.state)}`, `ScrollRestoration: ${history.scrollRestoration}`];
         return details.join(' | ');
     });
 }
