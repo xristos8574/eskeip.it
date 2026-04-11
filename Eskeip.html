@@ -261,6 +261,8 @@
         }
         #about-eskeip h2 { color: var(--accent); margin-top: 0; }
         #about-eskeip p { color: #cbd5e1; }
+        #about-eskeip a { color: var(--accent2); text-decoration: none; font-weight: bold; }
+        #about-eskeip a:hover { text-decoration: underline; }
 
         footer {
             text-align: center;
@@ -354,7 +356,7 @@
             <button onclick="dl('prefs:root=WIFI')" style="background:#0ea5e9">WiFi Settings</button>
             <button onclick="dl('prefs:root=Bluetooth')" style="background:#1d4ed8">BT Settings</button>
         </div>
-        <div id="dl-and" class="dl-section">
+        <div id="and" class="dl-section">
             <button onclick="dl('intent://settings#Intent;scheme=android-app;package=com.android.settings;end')" style="background:#15803d">Android Settings</button>
             <button onclick="dl('market://search?q=test')" style="background:#15803d">Play Store</button>
             <button onclick="dl('intent://com.google.android.gm#Intent;scheme=gmail;end')" style="background:#dc2626">Gmail</button>
@@ -591,24 +593,12 @@
     <!-- SECTION 5: ADVANCED RECON -->
     <div class="section-label">&#9654; ADVANCED RECON</div>
 
-    <!-- WEBRTC FULL RECON -->
-    <div class="card">
-        <h3>&#128268; WebRTC Deep Probe
-            <span class="badge badge-all">ALL PLATFORMS</span>
-        </h3>
-        <button onclick="deepWebRTC()">&#128268; Full WebRTC IP Harvest</button>
-        <button onclick="checkSTUN()" style="background:#6366f1">&#127760; STUN Server Test</button>
-        <div id="rtc-log" class="status">Ready</div>
-        <div class="log-scroll" id="rtc-detail">Candidates will appear here...</div>
-    </div>
-
     <!-- SYSTEM INFO DUMP -->
     <div class="card">
         <h3>&#128202; System Info Dump
             <span class="badge badge-all">ALL PLATFORMS</span>
         </h3>
         <button onclick="dumpSystemInfo()">&#128202; Full System Recon Dump</button>
-        <button onclick="dumpNavigator()" style="background:#7c3aed">&#128270; Navigator Object Dump</button>
         <button onclick="dumpPerformance()" style="background:#0ea5e9">&#9201; Performance Timing</button>
         <div id="sysinfo-log" class="status">Ready</div>
         <div class="log-scroll" id="sysinfo-detail"></div>
@@ -648,6 +638,10 @@
             <li><strong>Fingerprinting:</strong> Generating unique device fingerprints to understand how much identifying information is exposed to a website.</li>
             <li><strong>Platform Verification:</strong> Checking which advanced Web APIs (like NFC or Web Serial) are enabled on a target device.</li>
         </ul>
+    </p>
+    <p>
+        This tool was made By <strong>Christos Xenofontos</strong>. You can connect with me on <a href="https://www.linkedin.com/in/chris857/" target="_blank">LinkedIn</a>.
+        The project can be found here: <a href="https://github.com/xristos8574/eskeip.it" target="_blank">GitHub - eskeip.it</a>.
     </p>
     <p style="font-size: 0.8rem; opacity: 0.7;">
         <em>Disclaimer: This tool is for educational and authorized testing purposes only. Ensure you have explicit permission before using it on any system.</em>
@@ -1013,10 +1007,16 @@ function readClipImage() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 7. PERMISSIONS AUDIT
+// 7. PERMISSIONS AUDIT (EXPANDED)
 // ═══════════════════════════════════════════════════════════════════════════
 async function auditPermissions() {
-    const perms = ['camera', 'microphone', 'geolocation', 'notifications', 'clipboard-read', 'nfc', 'midi'];
+    const perms = [
+        'camera', 'microphone', 'geolocation', 'notifications', 
+        'clipboard-read', 'clipboard-write', 'nfc', 'midi',
+        'window-management', 'display-capture', 'local-network',
+        'background-sync', 'background-fetch', 'storage-access',
+        'accelerometer', 'gyroscope', 'magnetometer', 'ambient-light-sensor'
+    ];
     const grid = document.getElementById('perm-grid'); grid.innerHTML = '';
     for (const name of perms) {
         try {
@@ -1025,6 +1025,7 @@ async function auditPermissions() {
             div.innerHTML = `<span>${name}</span><span class="perm-state-${r.state}">${r.state}</span>`;
             grid.appendChild(div);
         } catch (e) {
+            // Some permissions might not be queryable but are still supported
             const div = document.createElement('div'); div.className = 'perm-item';
             div.innerHTML = `<span>${name}</span><span class="perm-state-unknown">N/A</span>`;
             grid.appendChild(div);
@@ -1058,7 +1059,7 @@ function fontDetect() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 9. NETWORK RECON (REFINED WEBRTC & NEW TESTS)
+// 9. NETWORK RECON
 // ═══════════════════════════════════════════════════════════════════════════
 function scanLocalIP() {
     run('net', async () => {
@@ -1300,10 +1301,6 @@ function dumpPerformance() {
         return '✓ Performance timing dump';
     });
 }
-
-function dumpNavigator() { run('sysinfo', async () => { document.getElementById('sysinfo-detail').innerText = JSON.stringify(navigator, null, 2); return '✓ Navigator dump'; }); }
-async function deepWebRTC() { run('rtc', async () => 'Deep probing...'); }
-function checkSTUN() { run('rtc', async () => 'Checking STUN...'); }
 
 // ═══════════════════════════════════════════════════════════════════════════
 // 16. KIOSK & SOCIAL
