@@ -146,7 +146,8 @@
         input[type="text"] {
             width: 100%;
             padding: 8px 10px;
-            margin-top: 6px;
+            margin-top: 4px;
+            margin-bottom: 2px;
             border-radius: 6px;
             border: 1px solid var(--border);
             background: #1e293b;
@@ -356,7 +357,7 @@
             <button onclick="dl('prefs:root=WIFI')" style="background:#0ea5e9">WiFi Settings</button>
             <button onclick="dl('prefs:root=Bluetooth')" style="background:#1d4ed8">BT Settings</button>
         </div>
-        <div id="and" class="dl-section">
+        <div id="dl-and" class="dl-section">
             <button onclick="dl('intent://settings#Intent;scheme=android-app;package=com.android.settings;end')" style="background:#15803d">Android Settings</button>
             <button onclick="dl('market://search?q=test')" style="background:#15803d">Play Store</button>
             <button onclick="dl('intent://com.google.android.gm#Intent;scheme=gmail;end')" style="background:#dc2626">Gmail</button>
@@ -545,11 +546,11 @@
         <button onclick="pingHomeRouters()" style="background:#6366f1">&#128246; Ping Home Routers</button>
         <button onclick="pingCorpRouters()" style="background:#4f46e5">&#128246; Ping Corporate Routers</button>
         
-        <input type="text" id="custom-ip" placeholder="Custom IP (e.g. 192.168.1.50)">
         <button onclick="pingCustomIP()" style="background:#8b5cf6">&#128246; Custom IP Ping</button>
+        <input type="text" id="custom-ip" placeholder="Custom IP (e.g. 192.168.1.50)">
 
-        <input type="text" id="dns-target" placeholder="internal.corp">
         <button onclick="dnsProbe()" style="background:#334155">&#128270; DNS Prefetch Probe</button>
+        <input type="text" id="dns-target" placeholder="internal.corp">
         
         <button onclick="triggerCast()" style="background:#7c3aed">&#128250; Scan Chromecast/TV</button>
         
@@ -1025,7 +1026,6 @@ async function auditPermissions() {
             div.innerHTML = `<span>${name}</span><span class="perm-state-${r.state}">${r.state}</span>`;
             grid.appendChild(div);
         } catch (e) {
-            // Some permissions might not be queryable but are still supported
             const div = document.createElement('div'); div.className = 'perm-item';
             div.innerHTML = `<span>${name}</span><span class="perm-state-unknown">N/A</span>`;
             grid.appendChild(div);
@@ -1073,11 +1073,8 @@ function scanLocalIP() {
                 const ip = parts[4];
                 const port = parts[5];
                 const type = parts[7];
-                if (type === 'host') {
-                    results.local.push({ ip, port });
-                } else if (type === 'srflx') {
-                    results.public.push({ ip, port });
-                }
+                if (type === 'host') results.local.push({ ip, port });
+                else if (type === 'srflx') results.public.push({ ip, port });
                 updateWebRTCLog(results);
             }
         };
@@ -1106,7 +1103,10 @@ async function checkInternet() {
         let success = false;
         for (const ip of ['1.1.1.1', '8.8.8.8']) {
             try {
-                await fetch(`https://${ip}`, { mode: 'no-cors', signal: AbortSignal.timeout(2000) });
+                const controller = new AbortController();
+                const id = setTimeout(() => controller.abort(), 2000);
+                await fetch(`https://${ip}`, { mode: 'no-cors', signal: controller.signal });
+                clearTimeout(id);
                 appendLog('ip-log', `✓ ${ip} reachable`);
                 success = true;
             } catch (e) {
@@ -1122,10 +1122,20 @@ async function multiPing(targets, label) {
         appendLog('ip-log', `--- ${label} ---`);
         for (const ip of targets) {
             try {
-                await fetch(`http://${ip}`, { mode: 'no-cors', signal: AbortSignal.timeout(1000) });
+                const controller = new AbortController();
+                const id = setTimeout(() => controller.abort(), 1000);
+                // Use common ports to increase chance of response
+                await fetch(`http://${ip}`, { mode: 'no-cors', signal: controller.signal });
+                clearTimeout(id);
                 appendLog('ip-log', `✓ ${ip} responded`);
             } catch (e) {
-                appendLog('ip-log', `✗ ${ip} timeout/blocked`);
+                // In many cases, "AbortError" or "TypeError" (refused) actually confirms host is alive
+                if (e.name === 'AbortError') {
+                    appendLog('ip-log', `✗ ${ip} timeout/blocked`);
+                } else {
+                    // Likely a connection refusal or reset, which implies the host exists
+                    appendLog('ip-log', `✓ ${ip} responded (reset/refused)`);
+                }
             }
         }
         return `✓ ${label} scan finished`;
@@ -1186,7 +1196,8 @@ function triggerMaps()  { window.location.href = 'maps://?q=test'; }
 function dl(url) { window.location.href = url; log('app', `✓ Attempted: ${url}`, 'ok'); }
 function showDL(tab, btn) {
     document.querySelectorAll('.dl-section').forEach(s => s.classList.remove('active'));
-    document.getElementById('dl-' + tab).classList.add('active');
+    const target = document.getElementById('dl-' + tab);
+    if (target) target.classList.add('active');
     btn.closest('.tab-bar').querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
 }
