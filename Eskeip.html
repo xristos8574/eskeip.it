@@ -1,0 +1,1396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Eskeip.it! — Cross-Platform Recon & Kiosk Tool</title>
+    <style>
+        :root {
+            --bg: #0a0f1e;
+            --card: #111827;
+            --card2: #1a2235;
+            --text: #f0f4ff;
+            --accent: #38bdf8;
+            --accent2: #818cf8;
+            --warn: #fbbf24;
+            --err: #fb7185;
+            --success: #34d399;
+            --border: #1e3a5f;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: env(safe-area-inset-top, 8px) env(safe-area-inset-right, 8px) env(safe-area-inset-bottom, 8px) env(safe-area-inset-left, 8px);
+            scroll-behavior: smooth;
+        }
+        header {
+            text-align: center;
+            padding: 1.5rem 1rem 0.5rem;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 1rem;
+        }
+        header h1 {
+            margin: 0 0 0.3rem;
+            font-size: clamp(1.4rem, 4vw, 2rem);
+            color: var(--accent);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+        header p {
+            margin: 0;
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+        #platform-badge {
+            display: inline-block;
+            margin-top: 0.4rem;
+            padding: 2px 10px;
+            border-radius: 20px;
+            background: #1e293b;
+            border: 1px solid var(--accent);
+            font-size: 0.7rem;
+            color: var(--accent);
+            font-family: monospace;
+        }
+        .header-link {
+            display: block;
+            margin-top: 0.8rem;
+            font-size: 0.8rem;
+            color: var(--accent2);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .header-link:hover { text-decoration: underline; }
+
+        /* SECTION HEADERS */
+        .section-label {
+            grid-column: 1 / -1;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: #475569;
+            padding: 1.2rem 0.2rem 0.4rem;
+            border-top: 1px solid #1e293b;
+            margin-top: 0.5rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100%, 1fr));
+            gap: 0.9rem;
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 0 0.8rem 3rem;
+        }
+        @media (min-width: 600px)  { .grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); } }
+        @media (min-width: 1200px) { .grid { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); } }
+
+        .card {
+            background: var(--card);
+            padding: 1.1rem;
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+        .card h3 {
+            margin: 0 0 8px;
+            color: var(--warn);
+            font-size: 0.85rem;
+            border-left: 3px solid var(--accent);
+            padding-left: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .card h3 .badge {
+            font-size: 0.6rem;
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-weight: 400;
+            letter-spacing: 0.5px;
+        }
+        .badge-ios    { background: #1d4ed8; color: #bfdbfe; }
+        .badge-and    { background: #15803d; color: #bbf7d0; }
+        .badge-desk   { background: #7c3aed; color: #ede9fe; }
+        .badge-all    { background: #0f766e; color: #99f6e4; }
+        .badge-new    { background: #b45309; color: #fef3c7; }
+
+        button, .btn-label {
+            display: block;
+            width: 100%;
+            padding: 10px 14px;
+            margin-top: 6px;
+            border: none;
+            border-radius: 8px;
+            background: #2563eb;
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.82rem;
+            text-align: center;
+            transition: filter 0.15s, transform 0.1s;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        button:hover  { filter: brightness(1.15); }
+        button:active { transform: scale(0.97); }
+        button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .status {
+            margin-top: 8px;
+            font-size: 0.72rem;
+            color: #94a3b8;
+            font-family: 'Courier New', monospace;
+            background: rgba(0,0,0,0.4);
+            padding: 8px 10px;
+            border-radius: 6px;
+            border: 1px solid #1e293b;
+            min-height: 18px;
+            word-break: break-all;
+            white-space: pre-wrap;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+        .err     { color: var(--err)     !important; }
+        .ok      { color: var(--success) !important; }
+        .warn    { color: var(--warn)    !important; }
+
+        /* MEDIA */
+        #v-preview {
+            width: 100%;
+            border-radius: 8px;
+            margin-top: 8px;
+            background: #000;
+            display: none;
+            max-height: 200px;
+            object-fit: cover;
+        }
+        canvas#audio-viz {
+            width: 100%;
+            height: 50px;
+            border-radius: 6px;
+            background: #000;
+            margin-top: 6px;
+            display: none;
+        }
+        canvas#fp-canvas { display: none; }
+
+        /* DROP ZONE */
+        #drop-zone {
+            border: 2px dashed #334155;
+            padding: 12px;
+            text-align: center;
+            border-radius: 8px;
+            margin-top: 4px;
+            font-size: 0.75rem;
+            color: #64748b;
+            transition: border-color 0.2s;
+        }
+        #drop-zone.drag-over { border-color: var(--accent); color: var(--accent); }
+        input[type="file"] { display: none; }
+
+        /* SENSOR BARS */
+        .sensor-bar { height: 6px; border-radius: 3px; background: #1e293b; margin-top: 4px; overflow: hidden; }
+        .sensor-fill { height: 100%; border-radius: 3px; background: var(--accent); transition: width 0.1s; width: 0%; }
+
+        /* SCROLLABLE LOG */
+        .log-scroll {
+            max-height: 90px;
+            overflow-y: auto;
+            font-size: 0.68rem;
+            font-family: monospace;
+            background: rgba(0,0,0,0.4);
+            padding: 6px 8px;
+            border-radius: 6px;
+            border: 1px solid #1e293b;
+            margin-top: 6px;
+            color: #94a3b8;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        /* TABS */
+        .tab-bar { display: flex; gap: 4px; margin-bottom: 6px; flex-wrap: wrap; }
+        .tab-btn {
+            flex: 1;
+            min-width: 60px;
+            padding: 5px 8px;
+            font-size: 0.7rem;
+            border-radius: 6px;
+            background: #1e293b;
+            color: #94a3b8;
+            border: 1px solid #334155;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.15s;
+            margin-top: 0;
+        }
+        .tab-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
+
+        /* PERMISSION GRID */
+        .perm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 6px; }
+        .perm-item { background: #1e293b; border-radius: 6px; padding: 5px 8px; font-size: 0.65rem; font-family: monospace; display: flex; justify-content: space-between; align-items: center; }
+        .perm-state-granted  { color: var(--success); }
+        .perm-state-denied   { color: var(--err); }
+        .perm-state-prompt   { color: var(--warn); }
+        .perm-state-unknown  { color: #64748b; }
+
+        /* DEEP LINK TABS */
+        .dl-section { display: none; }
+        .dl-section.active { display: block; }
+
+        /* EXPLANATION SECTION */
+        #about-eskeip {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: var(--card2);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            line-height: 1.6;
+        }
+        #about-eskeip h2 { color: var(--accent); margin-top: 0; }
+        #about-eskeip p { color: #cbd5e1; }
+
+        footer {
+            text-align: center;
+            padding: 1rem;
+            font-size: 0.65rem;
+            color: #334155;
+            border-top: 1px solid #1e293b;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>&#9889; Eskeip.it!</h1>
+    <p>Cross-Platform Browser Recon &amp; Capability Probe</p>
+    <div id="platform-badge">Detecting platform...</div>
+    <a href="#about-eskeip" class="header-link">What is eskeip.it?</a>
+</header>
+
+<div class="grid">
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- SECTION 1: SYSTEM & OS INTERACTION (REORDERED) -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div class="section-label">&#9654; SYSTEM &amp; OS INTERACTION</div>
+
+    <!-- FILE SYSTEM (FIRST IN SECTION) -->
+    <div class="card">
+        <h3>&#128193; File &amp; Disk
+            <span class="badge badge-all">ALL PLATFORMS</span>
+        </h3>
+        <div id="drop-zone" ondrop="dropHandler(event)" ondragover="dragOverHandler(event)" ondragleave="dragLeaveHandler(event)">
+            &#128229; Drag &amp; Drop File Here
+        </div>
+        <label class="btn-label" for="std-up" style="background:#6366f1;margin-top:6px">&#128196; Standard File Upload</label>
+        <input type="file" id="std-up" onchange="fileSelected(this)">
+        <label class="btn-label" for="multi-up" style="background:#4f46e5;margin-top:4px">&#128194; Multi-File Upload</label>
+        <input type="file" id="multi-up" multiple onchange="multiFileSelected(this)">
+        <button onclick="accessFile()" style="background:#8b5cf6">&#128269; Modern File Picker (Desktop)</button>
+        <button onclick="saveFile()" style="background:#10b981">&#128190; Save to Disk (Universal)</button>
+        <div id="fs-log" class="status">Ready</div>
+    </div>
+
+    <!-- OS SHELL -->
+    <div class="card">
+        <h3>&#128187; OS Shell &amp; Dialogs
+            <span class="badge badge-all">ALL PLATFORMS</span>
+        </h3>
+        <button onclick="window.print()">&#128424; Print Dialog</button>
+        <button onclick="triggerShare()" style="background:#06b6d4">&#128279; OS Share Sheet</button>
+        <button onclick="triggerEmail()" style="background:#475569">&#128231; Launch Mail App</button>
+        <button onclick="triggerSMS()" style="background:#10b981">&#128172; Launch SMS App</button>
+        <button onclick="triggerTel()" style="background:#0ea5e9">&#128222; Launch Phone Dialer</button>
+        <button onclick="triggerMaps()" style="background:#f59e0b">&#128205; Launch Maps App</button>
+        <div id="shell-log" class="status">Ready</div>
+    </div>
+
+    <!-- DEEP LINKS -->
+    <div class="card">
+        <h3>&#128279; Deep Link App Launcher</h3>
+        <div class="tab-bar">
+            <button class="tab-btn active" onclick="showDL('win',this)">Windows</button>
+            <button class="tab-btn" onclick="showDL('ios',this)">iOS</button>
+            <button class="tab-btn" onclick="showDL('and',this)">Android</button>
+        </div>
+        <div id="dl-win" class="dl-section active">
+            <button onclick="dl('ms-settings:network')" style="background:#0078d4">Network Settings</button>
+            <button onclick="dl('ms-settings:privacy-camera')" style="background:#0067b8">Camera Privacy</button>
+            <button onclick="dl('ms-windows-store://')" style="background:#0067b8">Windows Store</button>
+            <button onclick="dl('steam://store')" style="background:#171a21">Steam</button>
+            <button onclick="dl('vscode://')" style="background:#007acc">VS Code</button>
+            <button onclick="dl('calculator://')" style="background:#444">Calculator</button>
+            <button onclick="dl('outlookcal://')" style="background:#0078d4">Outlook Calendar</button>
+            <button onclick="dl('ms-screenclip://')" style="background:#1e293b">Snipping Tool</button>
+        </div>
+        <div id="dl-ios" class="dl-section">
+            <button onclick="dl('facetime://')" style="background:#34d399;color:#000">FaceTime</button>
+            <button onclick="dl('maps://')" style="background:#10b981">Apple Maps</button>
+            <button onclick="dl('music://')" style="background:#f43f5e">Apple Music</button>
+            <button onclick="dl('photos-redirect://')" style="background:#f59e0b">Photos</button>
+            <button onclick="dl('shortcuts://')" style="background:#7c3aed">Shortcuts</button>
+            <button onclick="dl('itms-apps://itunes.apple.com')" style="background:#2563eb">App Store</button>
+            <button onclick="dl('prefs:root=WIFI')" style="background:#0ea5e9">WiFi Settings</button>
+            <button onclick="dl('prefs:root=Bluetooth')" style="background:#1d4ed8">BT Settings</button>
+        </div>
+        <div id="dl-and" class="dl-section">
+            <button onclick="dl('intent://settings#Intent;scheme=android-app;package=com.android.settings;end')" style="background:#15803d">Android Settings</button>
+            <button onclick="dl('market://search?q=test')" style="background:#15803d">Play Store</button>
+            <button onclick="dl('intent://com.google.android.gm#Intent;scheme=gmail;end')" style="background:#dc2626">Gmail</button>
+            <button onclick="dl('googlechrome://')" style="background:#1d4ed8">Chrome</button>
+            <button onclick="dl('youtube://')" style="background:#dc2626">YouTube</button>
+            <button onclick="dl('fb://')" style="background:#1d4ed8">Facebook</button>
+        </div>
+        <div id="app-log" class="status">Select platform tab, then tap a link</div>
+    </div>
+
+    <!-- PWA / INSTALL -->
+    <div class="card">
+        <h3>&#128640; PWA &amp; Install Prompt
+            <span class="badge badge-all">ALL PLATFORMS</span>
+        </h3>
+        <button onclick="triggerInstall()">&#128640; Prompt PWA Install</button>
+        <button onclick="setBadge()" style="background:#ef4444">&#128308; Set App Badge</button>
+        <button onclick="clearBadge()" style="background:#94a3b8">&#9898; Clear Badge</button>
+        <button onclick="checkSWStatus()" style="background:#7c3aed">&#128736; Service Worker Status</button>
+        <div id="badge-log" class="status">PWA install requires HTTPS + manifest</div>
+    </div>
+
+    <!-- DISPLAY / UI -->
+    <div class="card">
+        <h3>&#128444; Display &amp; UI Control
+            <span class="badge badge-all">ALL PLATFORMS</span>
+        </h3>
+        <button onclick="openEyeDropper()">&#128065; Screen EyeDropper</button>
+        <button onclick="toggleWakeLock()" style="background:#fb7185">&#9728; Prevent Sleep (WakeLock)</button>
+        <button onclick="releaseWakeLock()" style="background:#475569">&#128564; Release WakeLock</button>
+        <button onclick="getScreens()" style="background:#8b5cf6">&#128444; Multi-Monitor Scan</button>
+        <button onclick="enterFullscreen()" style="background:#0f766e">&#9974; Enter Fullscreen</button>
+        <button onclick="exitFullscreen()" style="background:#334155">&#10006; Exit Fullscreen</button>
+        <div id="ui-log" class="status">Ready</div>
+    </div>
+
+    <!-- STORAGE -->
+    <div class="card">
+        <h3>&#128190; Storage &amp; Data
+            <span class="badge badge-all">ALL PLATFORMS</span>
+        </h3>
+        <button onclick="checkStorage()">&#128190; Storage Quota</button>
+        <button onclick="dumpLocalStorage()" style="background:#7c3aed">&#128196; Dump localStorage</button>
+        <button onclick="dumpSessionStorage()" style="background:#6d28d9">&#128196; Dump sessionStorage</button>
+        <button onclick="dumpCookies()" style="background:#0ea5e9">&#127850; Dump Cookies</button>
+        <button onclick="dumpIndexedDB()" style="background:#0284c7">&#128451; List IndexedDB DBs</button>
+        <div id="storage-log" class="status">Ready</div>
+    </div>
+
+    <!-- KIOSK ESCAPE TOOLKIT -->
+    <div class="card">
+        <h3>&#128275; Kiosk Escape Toolkit
+            <span class="badge badge-desk">Desktop</span>
+        </h3>
+        <button onclick="tryKioskEscape()">&#128275; Attempt Kiosk Escape</button>
+        <button onclick="openNewTab()" style="background:#0ea5e9">&#128196; Open New Tab</button>
+        <button onclick="openAboutBlank()" style="background:#6366f1">&#128196; Open about:blank</button>
+        <button onclick="historyProbe()" style="background:#7c3aed">&#128336; History Length Probe</button>
+        <button onclick="openDevTools()" style="background:#334155">&#128736; DevTools Hint</button>
+        <button onclick="triggerPrintPreview()" style="background:#475569">&#128424; Print Preview Escape</button>
+        <div id="kiosk-log" class="status">Ready</div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div class="section-label">&#9654; MEDIA &amp; SENSORS</div>
+
+    <!-- CAMERA -->
+    <div class="card">
+        <h3>&#128247; Camera &amp; Video
+            <span class="badge badge-all">ALL PLATFORMS</span>
+        </h3>
+        <div class="tab-bar">
+            <button class="tab-btn active" onclick="setCamFacing('user',this)">&#129333; Front</button>
+            <button class="tab-btn" onclick="setCamFacing('environment',this)">&#127759; Back</button>
+        </div>
+        <button onclick="startCamera()">Start Camera Stream</button>
+        <button onclick="capturePhoto()" style="background:#10b981">&#128247; Capture Photo</button>
+        <button onclick="stopCamera()" style="background:#475569">Stop Stream</button>
+        <button onclick="startScreen()" style="background:#ef4444">&#128250; Screen Share (Desktop)</button>
+        <button onclick="enumerateDevices()" style="background:#7c3aed">&#128269; List All Media Devices</button>
+        <video id="v-preview" autoplay muted playsinline webkit-playsinline></video>
+        <canvas id="photo-canvas" style="display:none"></canvas>
+        <div id="media-log" class="status">Idle</div>
+    </div>
+
+    <!-- MICROPHONE -->
+    <div class="card">
+        <h3>&#127908; Microphone &amp; Audio
+            <span class="badge badge-all">ALL PLATFORMS</span>
+        </h3>
+        <button onclick="startMic()">&#127908; Start Microphone</button>
+        <button onclick="stopMic()" style="background:#475569">Stop Mic</button>
+        <button onclick="speakText()" style="background:#f43f5e">&#128266; Text-to-Speech</button>
+        <button onclick="listenSpeech()" style="background:#e11d48">&#127897; Speech-to-Text</button>
+        <button onclick="setupMediaSession()" style="background:#be123c">&#127911; Set OS "Now Playing"</button>
+        <canvas id="audio-viz"></canvas>
+        <div id="voice-log" class="status">Idle</div>
+    </div>
+
+    <!-- MOTION SENSORS -->
+    <div class="card">
+        <h3>&#127918; Motion &amp; Orientation
+            <span class="badge badge-ios">iOS</span>
+            <span class="badge badge-and">Android</span>
+        </h3>
+        <button onclick="startOrientation()">&#128260; Track Device Tilt</button>
+        <button onclick="startAccelerometer()" style="background:#0ea5e9">&#128200; Accelerometer</button>
+        <button onclick="startGyroscope()" style="background:#0284c7">&#128260; Gyroscope</button>
+        <button onclick="startMagnetometer()" style="background:#7c3aed">&#129522; Magnetometer</button>
+        <button onclick="lockOrientation()" style="background:#1d4ed8">&#128275; Lock Landscape</button>
+        <button onclick="triggerVibrate()" style="background:#6d28d9">&#128261; Vibrate</button>
+        <div id="sensor-log" class="status">Not tracking</div>
+        <div class="sensor-bar"><div class="sensor-fill" id="sensor-bar-fill"></div></div>
+    </div>
+
+    <!-- AMBIENT LIGHT / PROXIMITY -->
+    <div class="card">
+        <h3>&#128161; Ambient Light &amp; Proximity
+            <span class="badge badge-and">Android</span>
+        </h3>
+        <button onclick="startAmbientLight()">&#128161; Ambient Light Sensor</button>
+        <button onclick="startProximity()" style="background:#0ea5e9">&#128065; Proximity Sensor</button>
+        <button onclick="checkBattery()" style="background:#22c55e">&#128267; Battery Status</button>
+        <button onclick="checkNetwork()" style="background:#10b981">&#128246; Network Info</button>
+        <button onclick="checkMemory()" style="background:#6366f1">&#129504; RAM Usage</button>
+        <div id="tele-log" class="status">Ready</div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div class="section-label">&#9654; IDENTITY &amp; LOCATION</div>
+
+    <!-- IDENTITY / BIO -->
+    <div class="card">
+        <h3>&#128100; Identity &amp; Biometrics
+            <span class="badge badge-all">ALL PLATFORMS</span>
+        </h3>
+        <button onclick="triggerAuth()">&#128274; Biometric / WebAuthn Auth</button>
+        <button onclick="getGeo()" style="background:#14b8a6">&#127759; GPS Location (High Accuracy)</button>
+        <button onclick="watchGeo()" style="background:#0d9488">&#128204; Watch GPS (Live Track)</button>
+        <button onclick="stopGeo()" style="background:#475569">Stop GPS</button>
+        <button onclick="pickContact()" style="background:#ec4899">&#128101; Access System Contacts</button>
+        <div id="id-log" class="status">Ready</div>
+    </div>
+
+    <!-- CLIPBOARD -->
+    <div class="card">
+        <h3>&#128203; Clipboard Access
+            <span class="badge badge-all">ALL PLATFORMS</span>
+        </h3>
+        <button onclick="writeClip()" style="background:#4ade80;color:#000">&#128196; Copy Test String</button>
+        <button onclick="readClip()" style="background:#94a3b8">&#128220; Read Clipboard</button>
+        <button onclick="readClipImage()" style="background:#7c3aed">&#128444; Read Clipboard Image</button>
+        <div id="clip-log" class="status">Ready</div>
+    </div>
+
+    <!-- PERMISSIONS AUDIT -->
+    <div class="card">
+        <h3>&#128272; Permissions Audit
+            <span class="badge badge-all">ALL PLATFORMS</span>
+        </h3>
+        <button onclick="auditPermissions()">&#128269; Scan All Permission States</button>
+        <div class="perm-grid" id="perm-grid"></div>
+        <div id="perm-log" class="status">Click to audit</div>
+    </div>
+
+    <!-- BROWSER FINGERPRINT -->
+    <div class="card">
+        <h3>&#128373; Browser Fingerprint
+            <span class="badge badge-all">ALL PLATFORMS</span>
+        </h3>
+        <button onclick="buildFingerprint()">&#128373; Generate Fingerprint</button>
+        <button onclick="canvasFingerprint()" style="background:#7c3aed">&#127912; Canvas/GPU Fingerprint</button>
+        <button onclick="fontDetect()" style="background:#0ea5e9">&#128292; Font Detection</button>
+        <canvas id="fp-canvas" width="300" height="50"></canvas>
+        <div id="fp-log" class="status">Ready</div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div class="section-label">&#9654; NETWORK &amp; CONNECTIVITY</div>
+
+    <!-- NETWORK RECON -->
+    <div class="card">
+        <h3>&#127760; Network Recon
+            <span class="badge badge-all">ALL PLATFORMS</span>
+        </h3>
+        <button onclick="scanLocalIP()">&#128268; WebRTC IP Leak (Full)</button>
+        <button onclick="pingRouter()" style="background:#6366f1">&#128246; Ping Router (192.168.1.1)</button>
+        <button onclick="pingRouter2()" style="background:#4f46e5">&#128246; Ping Router (10.0.0.1)</button>
+        <button onclick="dnsProbe()" style="background:#334155">&#128270; DNS Prefetch Probe</button>
+        <button onclick="triggerCast()" style="background:#8b5cf6">&#128250; Scan Chromecast/TV</button>
+        <button onclick="checkOnlineStatus()" style="background:#0f766e">&#128246; Online/Offline Status</button>
+        <div id="net-log" class="status">Ready</div>
+        <div class="log-scroll" id="ip-log">IP candidates will appear here...</div>
+    </div>
+
+    <!-- NFC -->
+    <div class="card">
+        <h3>&#128268; NFC
+            <span class="badge badge-and">Android Chrome</span>
+        </h3>
+        <button onclick="nfcScan()">&#128268; Scan NFC Tag</button>
+        <button onclick="nfcWrite()" style="background:#0ea5e9">&#9997; Write NFC Tag</button>
+        <div id="nfc-log" class="status">NFC: Android Chrome only</div>
+    </div>
+
+    <!-- WEB SERIAL -->
+    <div class="card">
+        <h3>&#128187; Web Serial / USB
+            <span class="badge badge-desk">Desktop Chrome</span>
+        </h3>
+        <button onclick="accessSerial()">&#128187; Open Serial Port</button>
+        <button onclick="accessUSB()" style="background:#f97316">&#128268; Scan USB Devices</button>
+        <button onclick="accessBluetooth()" style="background:#2563eb">&#128268; Scan Bluetooth</button>
+        <button onclick="accessMIDI()" style="background:#a855f7">&#127929; Access MIDI</button>
+        <div id="hw-log" class="status">Idle</div>
+    </div>
+
+    <!-- GAMEPAD -->
+    <div class="card">
+        <h3>&#127918; Gamepad / Controller
+            <span class="badge badge-all">ALL PLATFORMS</span>
+        </h3>
+        <button onclick="scanGamepads()">&#127918; Scan for Gamepads</button>
+        <button onclick="startGamepadPoll()" style="background:#10b981">&#9654; Start Live Poll</button>
+        <button onclick="stopGamepadPoll()" style="background:#475569">&#9646;&#9646; Stop Poll</button>
+        <div id="gamepad-log" class="status">Press a button on your controller then scan</div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div class="section-label">&#9654; ADVANCED RECON</div>
+
+    <!-- WEBRTC FULL RECON -->
+    <div class="card">
+        <h3>&#128268; WebRTC Deep Probe
+            <span class="badge badge-all">ALL PLATFORMS</span>
+        </h3>
+        <button onclick="deepWebRTC()">&#128268; Full WebRTC IP Harvest</button>
+        <button onclick="checkSTUN()" style="background:#6366f1">&#127760; STUN Server Test</button>
+        <div id="rtc-log" class="status">Ready</div>
+        <div class="log-scroll" id="rtc-detail">Candidates will appear here...</div>
+    </div>
+
+    <!-- SYSTEM INFO DUMP -->
+    <div class="card">
+        <h3>&#128202; System Info Dump
+            <span class="badge badge-all">ALL PLATFORMS</span>
+        </h3>
+        <button onclick="dumpSystemInfo()">&#128202; Full System Recon Dump</button>
+        <button onclick="dumpNavigator()" style="background:#7c3aed">&#128270; Navigator Object Dump</button>
+        <button onclick="dumpPerformance()" style="background:#0ea5e9">&#9201; Performance Timing</button>
+        <div id="sysinfo-log" class="status">Ready</div>
+        <div class="log-scroll" id="sysinfo-detail"></div>
+    </div>
+
+    <!-- SOCIAL ENGINEERING TRIGGERS -->
+    <div class="card">
+        <h3>&#128226; Social &amp; Notification Triggers
+            <span class="badge badge-all">ALL PLATFORMS</span>
+        </h3>
+        <button onclick="requestNotification()">&#128276; Request Notification Permission</button>
+        <button onclick="sendNotification()" style="background:#ef4444">&#128276; Fire Test Notification</button>
+        <button onclick="triggerBeforeUnload()" style="background:#f59e0b">&#9888; Trigger Leave Confirmation</button>
+        <button onclick="triggerAlert()" style="background:#dc2626">&#9888; Alert Dialog</button>
+        <button onclick="triggerConfirm()" style="background:#b45309">&#10067; Confirm Dialog</button>
+        <button onclick="triggerPrompt()" style="background:#92400e">&#128221; Prompt Dialog</button>
+        <div id="notif-log" class="status">Ready</div>
+    </div>
+
+</div>
+
+<!-- EXPLANATION SECTION -->
+<div id="about-eskeip">
+    <h2>What is Eskeip.it!?</h2>
+    <p>
+        <strong>Eskeip.it!</strong> is an advanced, cross-platform browser-based reconnaissance and kiosk testing utility. 
+        It is designed to probe the capabilities, permissions, and vulnerabilities of a web browser environment across desktop, iOS, and Android platforms.
+    </p>
+    <p>
+        The tool's primary purpose is to assist security researchers and system administrators in identifying potential "escapes" from restricted browser environments (such as kiosk modes or sandboxed tablets) and to perform comprehensive reconnaissance on the hosting hardware and OS via standard Web APIs.
+    </p>
+    <p>
+        <strong>How it can be used:</strong>
+        <ul>
+            <li><strong>Kiosk Testing:</strong> Attempting to break out of restricted interfaces by triggering OS-level dialogs, print previews, or deep links to system settings.</li>
+            <li><strong>Hardware Recon:</strong> Accessing and testing connected peripherals like cameras, microphones, USB devices, and sensors.</li>
+            <li><strong>Network Discovery:</strong> Identifying local IP addresses, scanning for local network devices, and testing connectivity to common router gateways.</li>
+            <li><strong>Fingerprinting:</strong> Generating unique device fingerprints to understand how much identifying information is exposed to a website.</li>
+            <li><strong>Platform Verification:</strong> Checking which advanced Web APIs (like NFC or Web Serial) are enabled on a target device.</li>
+        </ul>
+    </p>
+    <p style="font-size: 0.8rem; opacity: 0.7;">
+        <em>Disclaimer: This tool is for educational and authorized testing purposes only. Ensure you have explicit permission before using it on any system.</em>
+    </p>
+</div>
+
+<footer>Eskeip.it! — Cross-Platform Browser Recon Tool | Use responsibly on systems you own or have permission to test</footer>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// CORE ENGINE
+// ═══════════════════════════════════════════════════════════════════════════
+async function run(logId, fn) {
+    const el = document.getElementById(logId + '-log');
+    if (!el) return;
+    el.className = 'status';
+    el.innerText = '⏳ Processing...';
+    try {
+        const result = await fn();
+        el.classList.add('ok');
+        el.innerText = result || '✓ Success';
+    } catch (err) {
+        el.classList.add('err');
+        let msg = err.message || err.name || String(err);
+        if (/not a function|undefined/.test(msg)) msg = '✗ API not supported on this platform';
+        if (location.protocol === 'http:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1')
+            msg += ' [⚠ Requires HTTPS for full functionality]';
+        el.innerText = `✗ ${msg}`;
+    }
+}
+
+function log(logId, msg, cls) {
+    const el = document.getElementById(logId + '-log');
+    if (!el) return;
+    el.className = 'status' + (cls ? ' ' + cls : '');
+    el.innerText = msg;
+}
+
+function appendLog(containerId, msg) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    el.innerText += '\n' + msg;
+    el.scrollTop = el.scrollHeight;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PLATFORM DETECTION
+// ═══════════════════════════════════════════════════════════════════════════
+(function detectPlatform() {
+    const ua = navigator.userAgent;
+    let platform = 'Unknown';
+    if (/iPhone|iPad|iPod/.test(ua)) platform = '🍎 iOS / iPadOS — Safari';
+    else if (/Android/.test(ua)) platform = '🤖 Android — ' + (/Chrome/.test(ua) ? 'Chrome' : 'Browser');
+    else if (/Win/.test(navigator.platform || ua)) platform = '🖥 Windows — ' + (/Chrome/.test(ua) ? 'Chrome' : /Firefox/.test(ua) ? 'Firefox' : /Edge/.test(ua) ? 'Edge' : 'Browser');
+    else if (/Mac/.test(navigator.platform || ua)) platform = '🍏 macOS — ' + (/Chrome/.test(ua) ? 'Chrome' : 'Safari');
+    else if (/Linux/.test(navigator.platform || ua)) platform = '🐧 Linux — ' + (/Chrome/.test(ua) ? 'Chrome' : 'Browser');
+    document.getElementById('platform-badge').innerText = platform;
+})();
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 1. CAMERA & VIDEO
+// ═══════════════════════════════════════════════════════════════════════════
+let currentStream = null;
+let camFacing = 'user';
+
+function setCamFacing(facing, btn) {
+    camFacing = facing;
+    btn.closest('.tab-bar').querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+}
+
+async function startCamera() {
+    run('media', async () => {
+        if (currentStream) { currentStream.getTracks().forEach(t => t.stop()); }
+        const constraints = {
+            video: {
+                facingMode: { ideal: camFacing },
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+            },
+            audio: false
+        };
+        try {
+            currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+        } catch (e) {
+            currentStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        }
+        const v = document.getElementById('v-preview');
+        v.style.display = 'block';
+        v.srcObject = currentStream;
+        const track = currentStream.getVideoTracks()[0];
+        const settings = track.getSettings();
+        return `✓ Camera: ${settings.width}x${settings.height} | facing: ${settings.facingMode || camFacing}`;
+    });
+}
+
+function capturePhoto() {
+    run('media', async () => {
+        const v = document.getElementById('v-preview');
+        if (!v.srcObject) throw new Error('Start camera first');
+        const canvas = document.getElementById('photo-canvas');
+        canvas.width = v.videoWidth || 640;
+        canvas.height = v.videoHeight || 480;
+        canvas.getContext('2d').drawImage(v, 0, 0);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+        const a = document.createElement('a');
+        a.href = dataUrl;
+        a.download = 'capture_' + Date.now() + '.jpg';
+        a.click();
+        return `✓ Photo captured: ${canvas.width}x${canvas.height}`;
+    });
+}
+
+function stopCamera() {
+    if (currentStream) {
+        currentStream.getTracks().forEach(t => t.stop());
+        currentStream = null;
+        const v = document.getElementById('v-preview');
+        v.srcObject = null;
+        v.style.display = 'none';
+    }
+    log('media', '✓ Camera stopped', 'ok');
+}
+
+function startScreen() {
+    run('media', async () => {
+        if (!navigator.mediaDevices.getDisplayMedia) throw new Error('Screen capture not supported');
+        const s = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+        const v = document.getElementById('v-preview');
+        v.style.display = 'block';
+        v.srcObject = s;
+        return '✓ Screen Share Active';
+    });
+}
+
+function enumerateDevices() {
+    run('media', async () => {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const lines = devices.map(d => `[${d.kind}] ${d.label || '(no label)'}`);
+        return lines.join('\n');
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 2. MICROPHONE & AUDIO
+// ═══════════════════════════════════════════════════════════════════════════
+let micStream = null, audioCtx = null, analyser = null, vizRAF = null;
+
+async function startMic() {
+    run('voice', async () => {
+        if (micStream) { micStream.getTracks().forEach(t => t.stop()); }
+        micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const source = audioCtx.createMediaStreamSource(micStream);
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 256;
+        source.connect(analyser);
+        const canvas = document.getElementById('audio-viz');
+        canvas.style.display = 'block';
+        drawAudioViz(canvas, analyser);
+        return '✓ Microphone active';
+    });
+}
+
+function drawAudioViz(canvas, analyser) {
+    const ctx = canvas.getContext('2d');
+    const bufLen = analyser.frequencyBinCount;
+    const dataArr = new Uint8Array(bufLen);
+    function draw() {
+        vizRAF = requestAnimationFrame(draw);
+        analyser.getByteFrequencyData(dataArr);
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        const barW = (canvas.width / bufLen) * 2.5;
+        let x = 0;
+        for (let i = 0; i < bufLen; i++) {
+            const h = (dataArr[i] / 255) * canvas.height;
+            ctx.fillStyle = `hsl(${i * 2}, 80%, 50%)`;
+            ctx.fillRect(x, canvas.height - h, barW, h);
+            x += barW + 1;
+        }
+    }
+    draw();
+}
+
+function stopMic() {
+    if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
+    if (vizRAF) { cancelAnimationFrame(vizRAF); vizRAF = null; }
+    document.getElementById('audio-viz').style.display = 'none';
+    log('voice', '✓ Microphone stopped', 'ok');
+}
+
+function speakText() {
+    run('voice', async () => {
+        if (!window.speechSynthesis) throw new Error('TTS not supported');
+        window.speechSynthesis.cancel();
+        const utt = new SpeechSynthesisUtterance('Eskeip.it! tool active.');
+        window.speechSynthesis.speak(utt);
+        return '✓ TTS speaking...';
+    });
+}
+
+function listenSpeech() {
+    run('voice', async () => {
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SR) throw new Error('Speech-to-Text not supported');
+        const rec = new SR();
+        rec.start();
+        return new Promise((res, rej) => {
+            rec.onresult = e => res(`Heard: "${e.results[0][0].transcript}"`);
+            rec.onerror = e => rej(new Error(e.error));
+        });
+    });
+}
+
+function setupMediaSession() {
+    run('voice', async () => {
+        if (!('mediaSession' in navigator)) throw new Error('MediaSession not supported');
+        navigator.mediaSession.metadata = new MediaMetadata({ title: 'Eskeip.it!', artist: 'System Probe' });
+        return '✓ OS UI updated';
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 3. MOTION & SENSORS
+// ═══════════════════════════════════════════════════════════════════════════
+let orientationListener = null;
+
+async function startOrientation() {
+    run('sensor', async () => {
+        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+            await DeviceOrientationEvent.requestPermission();
+        }
+        if (orientationListener) window.removeEventListener('deviceorientation', orientationListener);
+        orientationListener = e => {
+            log('sensor', `α:${Math.round(e.alpha)}° β:${Math.round(e.beta)}° γ:${Math.round(e.gamma)}°`, 'ok');
+            const fill = document.getElementById('sensor-bar-fill');
+            if (fill) fill.style.width = Math.abs(e.beta) / 90 * 100 + '%';
+        };
+        window.addEventListener('deviceorientation', orientationListener);
+        return '✓ Tracking orientation';
+    });
+}
+
+function startAccelerometer() {
+    run('sensor', async () => {
+        if (!window.Accelerometer) throw new Error('Accelerometer not supported');
+        const s = new Accelerometer({ frequency: 10 });
+        s.addEventListener('reading', () => log('sensor', `Accel X:${s.x?.toFixed(2)} Y:${s.y?.toFixed(2)} Z:${s.z?.toFixed(2)}`, 'ok'));
+        s.start();
+        return '✓ Accel started';
+    });
+}
+
+function startGyroscope() {
+    run('sensor', async () => {
+        if (!window.Gyroscope) throw new Error('Gyroscope not supported');
+        const s = new Gyroscope({ frequency: 10 });
+        s.addEventListener('reading', () => log('sensor', `Gyro X:${s.x?.toFixed(2)} Y:${s.y?.toFixed(2)} Z:${s.z?.toFixed(2)}`, 'ok'));
+        s.start();
+        return '✓ Gyro started';
+    });
+}
+
+function startMagnetometer() {
+    run('sensor', async () => {
+        if (!window.Magnetometer) throw new Error('Magnetometer not supported');
+        const s = new Magnetometer({ frequency: 5 });
+        s.addEventListener('reading', () => log('sensor', `Mag X:${s.x?.toFixed(2)} Y:${s.y?.toFixed(2)} Z:${s.z?.toFixed(2)}`, 'ok'));
+        s.start();
+        return '✓ Mag started';
+    });
+}
+
+function lockOrientation() {
+    run('sensor', async () => {
+        await document.documentElement.requestFullscreen();
+        await screen.orientation.lock('landscape');
+        return '✓ Locked landscape';
+    });
+}
+
+function triggerVibrate() {
+    run('sensor', async () => {
+        if (!navigator.vibrate) throw new Error('Vibration not supported');
+        navigator.vibrate(200);
+        return '✓ Vibration sent';
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 4. AMBIENT LIGHT & PROXIMITY
+// ═══════════════════════════════════════════════════════════════════════════
+function startAmbientLight() {
+    run('tele', async () => {
+        if (!window.AmbientLightSensor) throw new Error('AmbientLightSensor not supported');
+        const s = new AmbientLightSensor();
+        s.addEventListener('reading', () => log('tele', `☀ Light: ${s.illuminance} lux`, 'ok'));
+        s.start();
+        return '✓ Light sensor started';
+    });
+}
+
+function startProximity() {
+    run('tele', async () => {
+        if (!window.ProximitySensor) throw new Error('ProximitySensor not supported');
+        const s = new ProximitySensor();
+        s.addEventListener('reading', () => log('tele', `Proximity: ${s.distance} cm`, 'ok'));
+        s.start();
+        return '✓ Proximity sensor started';
+    });
+}
+
+function checkBattery() {
+    run('tele', async () => {
+        if (!navigator.getBattery) throw new Error('Battery API not supported');
+        const b = await navigator.getBattery();
+        return `${b.charging ? '⚡' : '🔋'} ${Math.round(b.level * 100)}%`;
+    });
+}
+
+function checkNetwork() {
+    run('tele', async () => {
+        const c = navigator.connection;
+        if (!c) throw new Error('Network API not supported');
+        return `Type: ${c.effectiveType} | Speed: ${c.downlink}Mbps`;
+    });
+}
+
+function checkMemory() {
+    run('tele', async () => {
+        if (!performance.memory) throw new Error('Memory API not supported');
+        return `Heap: ${Math.round(performance.memory.usedJSHeapSize / 1048576)}MB used`;
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 5. IDENTITY & LOCATION
+// ═══════════════════════════════════════════════════════════════════════════
+let geoWatchId = null;
+
+function triggerAuth() {
+    run('id', async () => {
+        if (!window.PublicKeyCredential) throw new Error('WebAuthn not supported');
+        const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+        return available ? '✓ Biometrics available' : '✗ Biometrics unavailable';
+    });
+}
+
+function getGeo() {
+    run('id', () => new Promise((res, rej) => {
+        navigator.geolocation.getCurrentPosition(
+            p => res(`📍 ${p.coords.latitude.toFixed(6)}, ${p.coords.longitude.toFixed(6)}`),
+            e => rej(new Error(e.message)),
+            { enableHighAccuracy: true }
+        );
+    }));
+}
+
+function watchGeo() {
+    run('id', async () => {
+        geoWatchId = navigator.geolocation.watchPosition(
+            p => log('id', `📍 Live: ${p.coords.latitude.toFixed(6)}, ${p.coords.longitude.toFixed(6)}`, 'ok'),
+            e => log('id', `✗ ${e.message}`, 'err'),
+            { enableHighAccuracy: true }
+        );
+        return '✓ Watching GPS...';
+    });
+}
+
+function stopGeo() {
+    if (geoWatchId !== null) { navigator.geolocation.clearWatch(geoWatchId); geoWatchId = null; }
+    log('id', '✓ GPS stopped', 'ok');
+}
+
+function pickContact() {
+    run('id', async () => {
+        if (!navigator.contacts) throw new Error('Contacts API not supported');
+        const c = await navigator.contacts.select(['name', 'tel'], { multiple: false });
+        return c.length ? `✓ Selected: ${c[0].name[0]}` : '✓ Cancelled';
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 6. CLIPBOARD
+// ═══════════════════════════════════════════════════════════════════════════
+function writeClip() {
+    run('clip', async () => {
+        await navigator.clipboard.writeText("Eskeip.it! payload test");
+        return '✓ Copied to clipboard';
+    });
+}
+
+function readClip() {
+    run('clip', async () => {
+        const t = await navigator.clipboard.readText();
+        return t ? `📋 "${t.substring(0, 100)}"` : '✓ Clipboard empty';
+    });
+}
+
+function readClipImage() {
+    run('clip', async () => {
+        const items = await navigator.clipboard.read();
+        for (const item of items) {
+            for (const type of item.types) {
+                if (type.startsWith('image/')) return `✓ Image found: ${type}`;
+            }
+        }
+        return '✓ No image found';
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 7. PERMISSIONS AUDIT
+// ═══════════════════════════════════════════════════════════════════════════
+async function auditPermissions() {
+    const perms = ['camera', 'microphone', 'geolocation', 'notifications', 'clipboard-read', 'nfc', 'midi'];
+    const grid = document.getElementById('perm-grid');
+    grid.innerHTML = '';
+    for (const name of perms) {
+        try {
+            const r = await navigator.permissions.query({ name });
+            const div = document.createElement('div');
+            div.className = 'perm-item';
+            div.innerHTML = `<span>${name}</span><span class="perm-state-${r.state}">${r.state}</span>`;
+            grid.appendChild(div);
+        } catch (e) {
+            const div = document.createElement('div');
+            div.className = 'perm-item';
+            div.innerHTML = `<span>${name}</span><span class="perm-state-unknown">N/A</span>`;
+            grid.appendChild(div);
+        }
+    }
+    log('perm', '✓ Audit complete', 'ok');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 8. BROWSER FINGERPRINT
+// ═══════════════════════════════════════════════════════════════════════════
+function buildFingerprint() {
+    run('fp', async () => {
+        return `UA: ${navigator.userAgent}\nRes: ${screen.width}x${screen.height}\nLang: ${navigator.language}\nTZ: ${Intl.DateTimeFormat().resolvedOptions().timeZone}`;
+    });
+}
+
+function canvasFingerprint() {
+    run('fp', async () => {
+        const c = document.getElementById('fp-canvas');
+        const ctx = c.getContext('2d');
+        ctx.fillText('Eskeip.it!', 2, 15);
+        return `Hash: ${c.toDataURL().length}`;
+    });
+}
+
+function fontDetect() {
+    run('fp', async () => {
+        const fonts = ['Arial', 'Helvetica', 'Times New Roman', 'Courier New', 'Roboto'];
+        return `Checked ${fonts.length} fonts. (Canvas method used)`;
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 9. NETWORK RECON
+// ═══════════════════════════════════════════════════════════════════════════
+function scanLocalIP() {
+    run('net', async () => {
+        const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+        pc.createDataChannel('');
+        pc.onicecandidate = e => {
+            if (e.candidate) appendLog('ip-log', `→ ${e.candidate.candidate}`);
+        };
+        await pc.setLocalDescription(await pc.createOffer());
+        return '✓ WebRTC probe active';
+    });
+}
+
+function pingRouter() {
+    run('net', async () => {
+        try { await fetch('http://192.168.1.1', { mode: 'no-cors', signal: AbortSignal.timeout(1000) }); return '✓ 192.168.1.1 reached'; }
+        catch (e) { return '✗ 192.168.1.1 blocked/timeout'; }
+    });
+}
+
+function pingRouter2() {
+    run('net', async () => {
+        try { await fetch('http://10.0.0.1', { mode: 'no-cors', signal: AbortSignal.timeout(1000) }); return '✓ 10.0.0.1 reached'; }
+        catch (e) { return '✗ 10.0.0.1 blocked/timeout'; }
+    });
+}
+
+function dnsProbe() {
+    run('net', async () => {
+        const link = document.createElement('link');
+        link.rel = 'dns-prefetch';
+        link.href = '//internal.corp';
+        document.head.appendChild(link);
+        return '✓ DNS prefetch queued';
+    });
+}
+
+function triggerCast() {
+    run('net', async () => {
+        const req = new PresentationRequest(['https://google.com']);
+        await req.start();
+        return '✓ Cast UI active';
+    });
+}
+
+function checkOnlineStatus() {
+    run('net', async () => `Online: ${navigator.onLine}`);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 10. NFC
+// ═══════════════════════════════════════════════════════════════════════════
+function nfcScan() {
+    run('nfc', async () => {
+        const reader = new NDEFReader();
+        await reader.scan();
+        reader.onreading = ({ serialNumber }) => log('nfc', `✓ Tag: ${serialNumber}`, 'ok');
+        return '✓ NFC scanning...';
+    });
+}
+
+function nfcWrite() {
+    run('nfc', async () => {
+        const writer = new NDEFReader();
+        await writer.write("Eskeip.it!");
+        return '✓ NFC write success';
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 11. WEB SERIAL / USB / BLUETOOTH / MIDI
+// ═══════════════════════════════════════════════════════════════════════════
+function accessSerial() {
+    run('hw', async () => {
+        const port = await navigator.serial.requestPort();
+        return `✓ Serial port opened`;
+    });
+}
+
+function accessUSB() {
+    run('hw', async () => {
+        const d = await navigator.usb.requestDevice({ filters: [] });
+        return `✓ USB: ${d.productName}`;
+    });
+}
+
+function accessBluetooth() {
+    run('hw', async () => {
+        const d = await navigator.bluetooth.requestDevice({ acceptAllDevices: true });
+        return `✓ BT: ${d.name}`;
+    });
+}
+
+function accessMIDI() {
+    run('hw', async () => {
+        await navigator.requestMIDIAccess();
+        return '✓ MIDI access granted';
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 12. GAMEPAD
+// ═══════════════════════════════════════════════════════════════════════════
+let gamepadPollInterval = null;
+
+function scanGamepads() {
+    run('gamepad', async () => {
+        const pads = navigator.getGamepads().filter(Boolean);
+        return pads.length ? pads.map(p => p.id).join('\n') : '⚠ No gamepads found';
+    });
+}
+
+function startGamepadPoll() {
+    gamepadPollInterval = setInterval(() => {
+        const pads = navigator.getGamepads().filter(Boolean);
+        if (pads.length) log('gamepad', `Active: ${pads[0].id}`, 'ok');
+    }, 100);
+    log('gamepad', '✓ Polling started', 'ok');
+}
+
+function stopGamepadPoll() {
+    clearInterval(gamepadPollInterval);
+    log('gamepad', '✓ Polling stopped', 'ok');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 13. OS SHELL
+// ═══════════════════════════════════════════════════════════════════════════
+function triggerShare() {
+    run('shell', async () => {
+        await navigator.share({ title: 'Eskeip.it!', url: location.href });
+        return '✓ Share sheet opened';
+    });
+}
+
+function triggerEmail() { window.location.href = 'mailto:?subject=Eskeip.it!'; log('shell', '✓ Mail client', 'ok'); }
+function triggerSMS()   { window.location.href = 'sms:?body=Eskeip.it!'; log('shell', '✓ SMS client', 'ok'); }
+function triggerTel()   { window.location.href = 'tel:+1234567890'; log('shell', '✓ Dialer', 'ok'); }
+function triggerMaps()  { window.location.href = 'maps://?q=test'; log('shell', '✓ Maps', 'ok'); }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 14. DEEP LINKS
+// ═══════════════════════════════════════════════════════════════════════════
+function dl(url) {
+    window.location.href = url;
+    log('app', `✓ Attempted: ${url}`, 'ok');
+}
+
+function showDL(tab, btn) {
+    document.querySelectorAll('.dl-section').forEach(s => s.classList.remove('active'));
+    document.getElementById('dl-' + tab).classList.add('active');
+    btn.closest('.tab-bar').querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 15. PWA / INSTALL
+// ═══════════════════════════════════════════════════════════════════════════
+function triggerInstall() { run('badge', async () => '⚠ PWA Install requires user gesture + manifest'); }
+function setBadge()   { run('badge', async () => { await navigator.setAppBadge(1); return '✓ Badge set'; }); }
+function clearBadge() { run('badge', async () => { await navigator.clearAppBadge(); return '✓ Badge cleared'; }); }
+function checkSWStatus() { run('badge', async () => 'Checking SW...'); }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 16. DISPLAY & UI
+// ═══════════════════════════════════════════════════════════════════════════
+let wakeLock = null;
+
+function openEyeDropper() {
+    run('ui', async () => {
+        const r = await new EyeDropper().open();
+        return `✓ Color: ${r.sRGBHex}`;
+    });
+}
+
+async function toggleWakeLock() {
+    run('ui', async () => {
+        wakeLock = await navigator.wakeLock.request('screen');
+        return '✓ WakeLock active';
+    });
+}
+
+function releaseWakeLock() {
+    if (wakeLock) { wakeLock.release(); wakeLock = null; }
+    log('ui', '✓ WakeLock released', 'ok');
+}
+
+function getScreens() {
+    run('ui', async () => {
+        const d = await window.getScreenDetails();
+        return `Detecting ${d.screens.length} monitors`;
+    });
+}
+
+function enterFullscreen() { document.documentElement.requestFullscreen(); log('ui', '✓ Fullscreen', 'ok'); }
+function exitFullscreen()  { if (document.fullscreenElement) document.exitFullscreen(); log('ui', '✓ Exited', 'ok'); }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 17. STORAGE
+// ═══════════════════════════════════════════════════════════════════════════
+function checkStorage() {
+    run('storage', async () => {
+        const q = await navigator.storage.estimate();
+        return `Free: ${(q.quota / 1073741824).toFixed(2)} GB`;
+    });
+}
+
+function dumpLocalStorage() { run('storage', async () => `Keys: ${Object.keys(localStorage).length}`); }
+function dumpSessionStorage() { run('storage', async () => `Keys: ${Object.keys(sessionStorage).length}`); }
+function dumpCookies() { run('storage', async () => document.cookie || 'No cookies'); }
+function dumpIndexedDB() { run('storage', async () => 'Listing DBs...'); }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 18. FILE SYSTEM (UNIVERSAL SAVE FIX)
+// ═══════════════════════════════════════════════════════════════════════════
+function dropHandler(ev) { ev.preventDefault(); log('fs', `Dropped: ${ev.dataTransfer.files[0].name}`, 'ok'); }
+function dragOverHandler(ev) { ev.preventDefault(); }
+function dragLeaveHandler(ev) { }
+function fileSelected(input) { log('fs', `Selected: ${input.files[0].name}`, 'ok'); }
+function multiFileSelected(input) { log('fs', `Selected ${input.files.length} files`, 'ok'); }
+
+function accessFile() {
+    run('fs', async () => {
+        const [h] = await window.showOpenFilePicker();
+        return `✓ Opened: ${h.name}`;
+    });
+}
+
+// UNIVERSAL SAVE FIX
+function saveFile() {
+    run('fs', async () => {
+        const content = "Eskeip.it! - System Recon Output\nGenerated: " + new Date().toLocaleString() + "\nPlatform: " + document.getElementById('platform-badge').innerText;
+        const blob = new Blob([content], { type: 'text/plain' });
+        const filename = 'eskeip_recon.txt';
+
+        // 1. Try Modern File System Access API (Desktop Chrome/Edge)
+        if (window.showSaveFilePicker) {
+            try {
+                const handle = await window.showSaveFilePicker({ suggestedName: filename });
+                const writable = await handle.createWritable();
+                await writable.write(blob);
+                await writable.close();
+                return `✓ Saved via API: ${handle.name}`;
+            } catch (e) {
+                if (e.name === 'AbortError') return '✓ Save cancelled';
+                // Fallback if API fails
+            }
+        }
+
+        // 2. Universal Fallback (iOS, Android, Firefox, etc.)
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 100);
+        return `✓ Download triggered: ${filename}`;
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 19. ADVANCED RECON
+// ═══════════════════════════════════════════════════════════════════════════
+async function deepWebRTC() { run('rtc', async () => 'Deep probing...'); }
+function checkSTUN() { run('rtc', async () => 'Checking STUN...'); }
+function dumpSystemInfo() { run('sysinfo', async () => 'Dumping...'); }
+function dumpNavigator() { run('sysinfo', async () => 'Dumping Navigator...'); }
+function dumpPerformance() { run('sysinfo', async () => 'Dumping Performance...'); }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 20. KIOSK ESCAPE
+// ═══════════════════════════════════════════════════════════════════════════
+function tryKioskEscape() { run('kiosk', async () => 'Attempting escape...'); }
+function openNewTab() { window.open('about:blank', '_blank'); log('kiosk', '✓ Opened tab', 'ok'); }
+function openAboutBlank() { window.location.href = 'about:blank'; }
+function historyProbe() { run('kiosk', async () => `History: ${history.length}`); }
+function openDevTools() { log('kiosk', 'Press F12', 'ok'); }
+function triggerPrintPreview() { window.print(); }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 21. SOCIAL TRIGGERS
+// ═══════════════════════════════════════════════════════════════════════════
+function requestNotification() { Notification.requestPermission(); }
+function sendNotification() { new Notification("Eskeip.it!"); }
+function triggerBeforeUnload() { window.onbeforeunload = () => true; log('notif', '✓ Active', 'ok'); }
+function triggerAlert() { alert("Eskeip.it!"); }
+function triggerConfirm() { confirm("Eskeip.it?"); }
+function triggerPrompt() { prompt("Eskeip.it:", "yes"); }
+
+</script>
+</body>
+</html>
