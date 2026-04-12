@@ -272,6 +272,19 @@
             color: #334155;
             border-top: 1px solid #1e293b;
         }
+
+        /* Subnet Scanner Specific Styles */
+        .usage-box {
+            font-size: 0.65rem; background: rgba(56, 189, 248, 0.1);
+            border: 1px solid var(--accent); padding: 8px; border-radius: 8px; margin-bottom: 8px;
+            line-height: 1.3;
+        }
+        .usage-box code { color: var(--accent); font-weight: bold; }
+        .port-list { font-size: 0.6rem; color: #94a3b8; margin-bottom: 6px; font-style: italic; }
+        .btn-group { display: flex; gap: 4px; margin-top: 4px; }
+        .hit { color: var(--success); font-weight: bold; }
+        .act { color: var(--warn); }
+        #live-probe { color: var(--accent); font-weight: bold; border-top: 1px solid #1e3a5f; padding-top: 5px; margin-top: 5px; font-size: 0.65rem; }
     </style>
 </head>
 <body>
@@ -546,9 +559,6 @@
         <button onclick="pingHomeRouters()" style="background:#6366f1">&#128246; Ping Home Routers</button>
         <button onclick="pingCorpRouters()" style="background:#4f46e5">&#128246; Ping Corporate Routers</button>
         
-        <button onclick="pingCustomIP()" style="background:#8b5cf6">&#128246; Custom IP Ping</button>
-        <input type="text" id="custom-ip" placeholder="Custom IP (e.g. 192.168.1.50)">
-
         <button onclick="dnsProbe()" style="background:#334155">&#128270; DNS Prefetch Probe</button>
         <input type="text" id="dns-target" placeholder="internal.corp">
         
@@ -556,6 +566,30 @@
         
         <div id="net-log" class="status">Ready</div>
         <div class="log-scroll" id="ip-log">Network activity will appear here...</div>
+    </div>
+
+    <!-- SUBNET DISCOVERY SCANNER -->
+    <div class="card">
+        <h3>&#128269; Subnet Discovery Scanner
+            <span class="badge badge-all">ALL PLATFORMS</span>
+        </h3>
+        <div class="usage-box">
+            <b>Usage:</b><br>
+            - Single: <code>10.60.0.1</code><br>
+            - Subnet: <code>10.60.0.0/24</code><br>
+            - Range: <code>10.60.0.1-50</code><br>
+            - Mixed: <code>10.60.0.1, 10.60.0.20</code>
+        </div>
+        <div class="port-list" id="port-display">Ports: 80, 443, 3000, 5000, 5601, 7001, 8000, 8008, 8080, 8081, 8443, 8888, 9090, 9200, 10000</div>
+        <input type="text" id="target-input" placeholder="IP, Subnet, Range or Mixed..." value="192.168.0.1, 192.168.0.180">
+        <div class="btn-group">
+            <button onclick="smartScan()" style="background:#0ea5e9">Start Discovery</button>
+            <button onclick="stopScan()" style="background:var(--err)">Stop Scan</button>
+        </div>
+        <div class="status">
+            <div id="permanent-log">Waiting for input...</div>
+            <div id="live-probe">Scanner Idle</div>
+        </div>
     </div>
 
     <!-- NFC -->
@@ -1124,16 +1158,13 @@ async function multiPing(targets, label) {
             try {
                 const controller = new AbortController();
                 const id = setTimeout(() => controller.abort(), 1000);
-                // Use common ports to increase chance of response
                 await fetch(`http://${ip}`, { mode: 'no-cors', signal: controller.signal });
                 clearTimeout(id);
                 appendLog('ip-log', `✓ ${ip} responded`);
             } catch (e) {
-                // In many cases, "AbortError" or "TypeError" (refused) actually confirms host is alive
                 if (e.name === 'AbortError') {
                     appendLog('ip-log', `✗ ${ip} timeout/blocked`);
                 } else {
-                    // Likely a connection refusal or reset, which implies the host exists
                     appendLog('ip-log', `✓ ${ip} responded (reset/refused)`);
                 }
             }
@@ -1144,12 +1175,6 @@ async function multiPing(targets, label) {
 
 function pingHomeRouters() { multiPing(['192.168.1.1', '192.168.0.1', '192.168.1.254', '192.168.0.254', '192.168.10.1', '192.168.31.1'], 'Home Routers'); }
 function pingCorpRouters() { multiPing(['10.0.0.1', '10.1.1.1', '172.16.0.1', '172.31.255.254'], 'Corporate Routers'); }
-
-function pingCustomIP() {
-    const ip = document.getElementById('custom-ip').value.trim();
-    if (!ip) { log('net', '✗ Enter an IP', 'err'); return; }
-    multiPing([ip], 'Custom IP Ping');
-}
 
 function dnsProbe() {
     run('net', async () => {
@@ -1166,6 +1191,99 @@ function dnsProbe() {
 }
 
 function triggerCast() { run('net', async () => { const req = new PresentationRequest(['https://google.com']); await req.start(); return '✓ Cast UI active'; }); }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 9.1 SUBNET DISCOVERY SCANNER
+// ═══════════════════════════════════════════════════════════════════════════
+let isScanning = false;
+
+function stopScan() {
+    isScanning = false;
+    document.getElementById('live-probe').innerText = "🛑 Scan Stopped.";
+}
+
+async function smartScan() {
+    if (isScanning) return;
+    
+    const permLog = document.getElementById('permanent-log');
+    const liveProbe = document.getElementById('live-probe');
+    const rawInput = document.getElementById('target-input').value.trim();
+    const ports = [80, 443, 3000, 5000, 5601, 7001, 8000, 8008, 8080, 8081, 8443, 8888, 9090, 9200, 10000];
+    
+    let targets = [];
+    permLog.innerHTML = "";
+    permLog.classList.remove('err');
+
+    try {
+        if (!rawInput) throw new Error("Input is empty.");
+
+        const blocks = rawInput.split(',').map(s => s.trim()).filter(s => s !== "");
+        
+        blocks.forEach(input => {
+            if (input.match(/^\d+\.\d+\.\d+\.\d+\/\d+$/)) {
+                const [ip, mask] = input.split('/');
+                if (mask !== "24") throw new Error(`Only /24 is supported: ${input}`);
+                const base = ip.split('.').slice(0, 3).join('.');
+                for (let i = 1; i <= 254; i++) targets.push(`${base}.${i}`);
+            } 
+            else if (input.match(/^\d+\.\d+\.\d+\.\d+-\d+$/)) {
+                const parts = input.split('.');
+                const base = parts.slice(0, 3).join('.');
+                const [start, end] = parts[3].split('-').map(Number);
+                if (isNaN(start) || isNaN(end) || start > end) throw new Error(`Invalid Range: ${input}`);
+                for (let i = start; i <= end; i++) targets.push(`${base}.${i}`);
+            } 
+            else if (input.match(/^\d+\.\d+\.\d+\.\d+$/)) {
+                targets.push(input);
+            } 
+            else {
+                throw new Error(`Syntax Error: "${input}" is invalid.`);
+            }
+        });
+
+        if (targets.length === 0) throw new Error("No valid targets identified.");
+
+        isScanning = true;
+        permLog.innerHTML = `🚀 Initializing Scan on ${targets.length} host(s)...<br>`;
+
+        for (const ip of targets) {
+            if (!isScanning) break;
+            liveProbe.innerText = `🔍 Probing ${ip}...`;
+
+            const probes = ports.map(async (port) => {
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 1200);
+                const start = performance.now();
+
+                try {
+                    await fetch(`http://${ip}:${port}`, { mode: 'no-cors', signal: controller.signal });
+                    clearTimeout(timeout);
+                    permLog.innerHTML += `<span class="hit">[HIT] ${ip}:${port} (OPEN)</span><br>`;
+                    permLog.scrollTop = permLog.scrollHeight;
+                } catch (e) {
+                    clearTimeout(timeout);
+                    const diff = performance.now() - start;
+                    if (e.name !== 'AbortError' && diff < 150) {
+                        permLog.innerHTML += `<span class="act">[ACT] ${ip}:${port} (ACTIVE)</span><br>`;
+                        permLog.scrollTop = permLog.scrollHeight;
+                    }
+                }
+            });
+
+            await Promise.all(probes);
+            await new Promise(r => setTimeout(r, 40));
+        }
+
+        isScanning = false;
+        liveProbe.innerText = isScanning ? "..." : "✅ Scan Complete.";
+
+    } catch (e) {
+        permLog.classList.add('err');
+        permLog.innerHTML = `❌ Parser Error: ${e.message}`;
+        isScanning = false;
+        liveProbe.innerText = "Scanner Idle";
+    }
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // 10. NFC / SERIAL / USB / MIDI
