@@ -451,8 +451,7 @@
         <button onclick="pingHomeRouters()" style="background:#6366f1">&#128246; Ping Home Routers</button>
         <button onclick="pingCorpRouters()" style="background:#4f46e5">&#128246; Ping Corporate Routers</button>
         
-        <button onclick="dnsProbe()" style="background:#334155">&#128270; DNS Prefetch Probe</button>
-        <input type="text" id="dns-target" placeholder="internal.corp">
+
         
         <button onclick="triggerCast()" style="background:#7c3aed">&#128250; Scan Chromecast/TV</button>
         
@@ -987,10 +986,38 @@ function checkMemory() {
 // ═══════════════════════════════════════════════════════════════════════════
 let geoWatchId = null;
 
-function triggerAuth() {
+async function triggerAuth() {
     run('id', async () => {
-        if (!window.PublicKeyCredential) throw new Error('WebAuthn not supported');
-        return await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable() ? '✓ Biometrics available' : '✗ Biometrics unavailable';
+        // 1. Check for platform support
+        if (!window.PublicKeyCredential) throw new Error("WebAuthn not supported in this browser.");
+        const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+        if (!available) throw new Error("Biometrics not supported on this device/browser.");
+
+        // 2. Setup the "Mock" Challenge
+        // Browsers require these specific fields to trigger the native popup
+        const publicKeyCredentialCreationOptions = {
+            challenge: Uint8Array.from("random_challenge_string", c => c.charCodeAt(0)),
+            rp: { name: "Eskeip.it! Dashboard", id: window.location.hostname || "localhost" },
+            user: {
+                id: Uint8Array.from("user_id_123", c => c.charCodeAt(0)),
+                name: "system_master@eskeip.it",
+                displayName: "System Master"
+            },
+            pubKeyCredParams: [{ alg: -7, type: "public-key" }], // ES256 algorithm
+            authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" },
+            timeout: 60000
+        };
+
+        // 3. Trigger the actual OS Hardware Prompt
+        const credential = await navigator.credentials.create({
+            publicKey: publicKeyCredentialCreationOptions
+        });
+
+        if (credential) {
+            return "✓ Auth Success: " + credential.id.substring(0, 10) + "...";
+        } else {
+            throw new Error("Credential creation failed.");
+        }
     });
 }
 
@@ -1259,19 +1286,7 @@ async function multiPing(targets, label) {
 function pingHomeRouters() { multiPing(['192.168.1.1', '192.168.0.1', '192.168.1.254', '192.168.0.254', '192.168.10.1', '192.168.31.1'], 'Home Routers'); }
 function pingCorpRouters() { multiPing(['10.0.0.1', '10.1.1.1', '172.16.0.1', '172.31.255.254'], 'Corporate Routers'); }
 
-function dnsProbe() {
-    run('net', async () => {
-        const domain = document.getElementById('dns-target').value.trim() || 'internal.corp';
-        const link = document.createElement('link');
-        link.rel = 'dns-prefetch';
-        link.href = `//${domain}`;
-        document.head.appendChild(link);
-        
-        const output = `DNS Probe\n\n- Target domain: ${domain}\n- Action: DNS prefetch requested\n- Status: queued (no direct result available)\n\nNote: Browser does not expose DNS resolution result for security reasons.`;
-        document.getElementById('ip-log').innerText = output;
-        return '✓ DNS prefetch queued';
-    });
-}
+
 
 function triggerCast() { run('net', async () => { const req = new PresentationRequest(['https://google.com']); await req.start(); return '✓ Cast UI active'; }); }
 
