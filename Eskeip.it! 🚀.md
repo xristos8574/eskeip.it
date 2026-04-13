@@ -50,7 +50,7 @@ Once upon a time, during a routine pentest on a kiosk machine, I found myself tr
 *   **Network Discovery**: Mapping local network segments and identifying reachable hosts.
 *   **Browser Fingerprinting**: Understanding the unique identifiers a browser exposes.
 
-**Transparency is key**: All the code for **Eskeip.it!** is open-source and contained within this single `index.html` file. Anyone can inspect the code to verify its functionality and ensure no hidden or malicious actions are performed. Furthermore, all functions run directly within your browser's sandbox; **no data is sent to any external server by the tool itself.** For use in closed networks or offline scenarios, simply host the `Eskeip.html` file locally.
+**Transparency is key**: All the code for **Eskeip.it!** is open-source and contained within this single `index.html` file. Anyone can inspect the code to verify its functionality and ensure no hidden or malicious actions are performed. Furthermore, all functions run directly within your browser's sandbox; **no data is sent to any external server by the tool itself.** For use in closed networks or offline scenarios, simply host the `index.html` file locally.
 
 ## General Functionality Note
 
