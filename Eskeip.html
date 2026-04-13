@@ -405,8 +405,7 @@
         <button onclick="openAboutBlank()" style="background:#6366f1">&#128196; Open about:blank</button>
         <button onclick="historyProbe()" style="background:#7c3aed">&#128336; History Length Probe</button>
         <button onclick="triggerPrintPreview()" style="background:#475569">&#128424; Print Preview Escape</button>
-        <button onclick="goToWindowsFS()" style="background:#0078d4">&#128193; Go to Windows Filesystem (C:)</button>
-        <button onclick="goToUnixFS()" style="background:#f97316">&#128193; Go to Linux/Unix Filesystem</button>
+
         <div id="kiosk-log" class="status">Ready</div>
     </div>
 
@@ -1456,15 +1455,7 @@ function historyProbe() {
 }
 function triggerPrintPreview() { window.print(); }
 
-function goToWindowsFS() {
-    window.open('C:', '_blank');
-    log('kiosk', '✓ Attempted to open Windows filesystem (C:)', 'ok');
-}
 
-function goToUnixFS() {
-    window.open('file:///', '_blank');
-    log('kiosk', '✓ Attempted to open Unix/Linux filesystem (file:///)', 'ok');
-}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // 15. PWA & UI
