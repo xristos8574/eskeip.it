@@ -290,17 +290,19 @@
         }
 
         /* Subnet Scanner Specific Styles */
-        .usage-box {
-            font-size: 0.65rem; background: rgba(56, 189, 248, 0.1);
-            border: 1px solid var(--accent); padding: 8px; border-radius: 8px; margin-bottom: 8px;
-            line-height: 1.3;
-        }
-        .usage-box code { color: var(--accent); font-weight: bold; }
-        .port-list { font-size: 0.6rem; color: #94a3b8; margin-bottom: 6px; font-style: italic; }
-        .btn-group { display: flex; gap: 4px; margin-top: 4px; }
-        .hit { color: var(--success); font-weight: bold; }
-        .act { color: var(--warn); }
-        #live-probe { color: var(--accent); font-weight: bold; border-top: 1px solid #1e3a5f; padding-top: 5px; margin-top: 5px; font-size: 0.65rem; }
+      // Subnet Scanner Specific Styles
+    .usage-box {
+        font-size: 0.65rem; background: rgba(56, 189, 248, 0.1);
+        border: 1px solid var(--accent); padding: 8px; border-radius: 8px; margin-bottom: 8px;
+        line-height: 1.3;
+    }
+    .usage-box code { color: var(--accent); font-weight: bold; }
+    .port-list { font-size: 0.6rem; color: #94a3b8; margin-bottom: 6px; font-style: italic; }
+    .btn-group { display: flex; gap: 4px; margin-top: 4px; }
+    .hit { color: var(--success); font-weight: bold; }
+    .act { color: var(--warn); }
+    #live-probe { color: var(--accent); font-weight: bold; border-top: 1px solid #1e3a5f; padding-top: 5px; margin-top: 5px; font-size: 0.65rem; }
+    #noise-threshold { font-size: 0.6rem; color: #64748b; margin-top: 2px; }m; }
     </style>
 </head>
 <body>
@@ -1277,10 +1279,33 @@ function triggerCast() { run('net', async () => { const req = new PresentationRe
 // 11. SUBNET DISCOVERY SCANNER
 // ═══════════════════════════════════════════════════════════════════════════
 let isScanning = false;
+let noiseBaseline = 150; // Default fallback
 
 function stopScan() {
     isScanning = false;
     document.getElementById('live-probe').innerText = "🛑 Scan Stopped.";
+}
+
+async function calibrateNoise() {
+    const nonExistentIP = "192.168.255.255"; // Likely to trigger a fast reject
+    const testPort = 12345;
+    const samples = [];
+    for (let i = 0; i < 5; i++) {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 500);
+        const start = performance.now();
+        try {
+            await fetch(`http://${nonExistentIP}:${testPort}`, { mode: 'no-cors', signal: controller.signal });
+        } catch (e) {
+            samples.push(performance.now() - start);
+        }
+        clearTimeout(timeout);
+    }
+    const avg = samples.reduce((a, b) => a + b, 0) / samples.length;
+    // We set the threshold at 2.5x the noise average to be safe, but at least 10ms
+    noiseBaseline = Math.max(avg * 2.5, 15); 
+    console.log(`Noise Calibration: Avg=${avg.toFixed(2)}ms, Threshold=${noiseBaseline.toFixed(2)}ms`);
+    return noiseBaseline;
 }
 
 async function smartScan() {
@@ -1325,7 +1350,11 @@ async function smartScan() {
         if (targets.length === 0) throw new Error("No valid targets identified.");
 
         isScanning = true;
+        liveProbe.innerText = "📡 Calibrating noise threshold...";
+        const threshold = await calibrateNoise();
+        
         permLog.innerHTML = `🚀 Initializing Scan on ${targets.length} host(s)...<br>`;
+        permLog.innerHTML += `<div id="noise-threshold">Adaptive Noise Threshold: ${threshold.toFixed(1)}ms</div><br>`;
 
         for (const ip of targets) {
             if (!isScanning) break;
@@ -1344,7 +1373,8 @@ async function smartScan() {
                 } catch (e) {
                     clearTimeout(timeout);
                     const diff = performance.now() - start;
-                    if (e.name !== 'AbortError' && diff < 150) {
+                    // Filter: Only show [ACT] if the response was slower than the noise baseline
+                    if (e.name !== 'AbortError' && diff > threshold) {
                         permLog.innerHTML += `<span class="act">[ACT] ${ip}:${port} (ACTIVE)</span><br>`;
                         permLog.scrollTop = permLog.scrollHeight;
                     }
