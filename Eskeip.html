@@ -328,18 +328,15 @@
         <div id="perm-log" class="status">Click to audit</div>
     </div>
 
-    <!-- OS SHELL -->
+    <!-- SYSTEM INFO DUMP -->
     <div class="card">
-        <h3>&#128187; OS Shell &amp; Dialogs
+        <h3>&#128202; System Info Dump
             <span class="badge badge-all">ALL PLATFORMS</span>
         </h3>
-        <button onclick="window.print()">&#128424; Print Dialog</button>
-        <button onclick="triggerShare()" style="background:#06b6d4">&#128279; OS Share Sheet</button>
-        <button onclick="triggerEmail()" style="background:#475569">&#128231; Launch Mail App</button>
-        <button onclick="triggerSMS()" style="background:#10b981">&#128172; Launch SMS App</button>
-        <button onclick="triggerTel()" style="background:#0ea5e9">&#128222; Launch Phone Dialer</button>
-        <button onclick="triggerMaps()" style="background:#f59e0b">&#128205; Launch Maps App</button>
-        <div id="shell-log" class="status">Ready</div>
+        <button onclick="dumpSystemInfo()">&#128202; Full System Recon Dump</button>
+        <button onclick="dumpPerformance()" style="background:#0ea5e9">&#9201; Performance Timing</button>
+        <div id="sysinfo-log" class="status">Ready</div>
+        <div class="log-scroll" id="sysinfo-detail"></div>
     </div>
 
     <!-- DEEP LINKS -->
@@ -381,16 +378,18 @@
         <div id="app-log" class="status">Select platform tab, then tap a link</div>
     </div>
 
-    <!-- PWA / INSTALL -->
+    <!-- KIOSK ESCAPE TOOLKIT -->
     <div class="card">
-        <h3>&#128640; PWA &amp; Install Prompt
-            <span class="badge badge-all">ALL PLATFORMS</span>
+        <h3>&#128275; Kiosk Escape Toolkit
+            <span class="badge badge-desk">Desktop</span>
         </h3>
-        <button onclick="triggerInstall()">&#128640; Prompt PWA Install</button>
-        <button onclick="setBadge()" style="background:#ef4444">&#128308; Set App Badge</button>
-        <button onclick="clearBadge()" style="background:#94a3b8">&#9898; Clear Badge</button>
-        <button onclick="checkSWStatus()" style="background:#7c3aed">&#128736; Service Worker Status</button>
-        <div id="badge-log" class="status">PWA install requires HTTPS + manifest</div>
+        <button onclick="openNewTab()" style="background:#0ea5e9">&#128196; Open New Tab</button>
+        <button onclick="openAboutBlank()" style="background:#6366f1">&#128196; Open about:blank</button>
+        <button onclick="historyProbe()" style="background:#7c3aed">&#128336; History Length Probe</button>
+        <button onclick="triggerPrintPreview()" style="background:#475569">&#128424; Print Preview Escape</button>
+        <button onclick="goToWindowsFS()" style="background:#0078d4">&#128193; Go to Windows Filesystem (C:)</button>
+        <button onclick="goToUnixFS()" style="background:#f97316">&#128193; Go to Linux/Unix Filesystem</button>
+        <div id="kiosk-log" class="status">Ready</div>
     </div>
 
     <!-- DISPLAY / UI CONTROL -->
@@ -420,19 +419,86 @@
         <div id="storage-log" class="status">Ready</div>
     </div>
 
-    <!-- KIOSK ESCAPE TOOLKIT -->
+    <!-- SECTION 2: NETWORK & CONNECTIVITY -->
+    <div class="section-label">&#9654; NETWORK &amp; CONNECTIVITY</div>
+
+    <!-- NETWORK RECON -->
     <div class="card">
-        <h3>&#128275; Kiosk Escape Toolkit
-            <span class="badge badge-desk">Desktop</span>
+        <h3>&#127760; Network Recon
+            <span class="badge badge-all">ALL PLATFORMS</span>
         </h3>
-        <button onclick="openNewTab()" style="background:#0ea5e9">&#128196; Open New Tab</button>
-        <button onclick="openAboutBlank()" style="background:#6366f1">&#128196; Open about:blank</button>
-        <button onclick="historyProbe()" style="background:#7c3aed">&#128336; History Length Probe</button>
-        <button onclick="triggerPrintPreview()" style="background:#475569">&#128424; Print Preview Escape</button>
-        <div id="kiosk-log" class="status">Ready</div>
+        <button onclick="scanLocalIP()">&#128268; WebRTC IP Leak (Full)</button>
+        <button onclick="checkInternet()" style="background:#10b981">&#127760; Connected to Internet?</button>
+        <button onclick="pingHomeRouters()" style="background:#6366f1">&#128246; Ping Home Routers</button>
+        <button onclick="pingCorpRouters()" style="background:#4f46e5">&#128246; Ping Corporate Routers</button>
+        
+        <button onclick="dnsProbe()" style="background:#334155">&#128270; DNS Prefetch Probe</button>
+        <input type="text" id="dns-target" placeholder="internal.corp">
+        
+        <button onclick="triggerCast()" style="background:#7c3aed">&#128250; Scan Chromecast/TV</button>
+        
+        <div id="net-log" class="status">Ready</div>
+        <div class="log-scroll" id="ip-log">Network activity will appear here...</div>
     </div>
 
-    <!-- SECTION 2: MEDIA & SENSORS -->
+    <!-- SUBNET DISCOVERY SCANNER -->
+    <div class="card">
+        <h3>&#128269; Subnet Discovery Scanner
+            <span class="badge badge-all">ALL PLATFORMS</span>
+        </h3>
+        <div class="usage-box">
+            <b>Usage:</b><br>
+            - Single: <code>10.60.0.1</code><br>
+            - Subnet: <code>10.60.0.0/24</code><br>
+            - Range: <code>10.60.0.1-50</code><br>
+            - Mixed: <code>10.60.0.1, 10.60.0.20</code>
+        </div>
+        <div class="port-list" id="port-display">Ports: 80, 443, 3000, 5000, 5601, 7001, 8000, 8008, 8080, 8081, 8443, 8888, 9090, 9200, 10000</div>
+        <input type="text" id="target-input" placeholder="IP, Subnet, Range or Mixed..." value="192.168.0.1, 192.168.0.180">
+        <div class="btn-group">
+            <button onclick="smartScan()" style="background:#0ea5e9">Start Discovery</button>
+            <button onclick="stopScan()" style="background:var(--err)">Stop Scan</button>
+        </div>
+        <div class="status">
+            <div id="permanent-log">Waiting for input...</div>
+            <div id="live-probe">Scanner Idle</div>
+        </div>
+    </div>
+
+    <!-- WEB SERIAL -->
+    <div class="card">
+        <h3>&#128187; Web Serial / USB
+            <span class="badge badge-desk">Desktop Chrome</span>
+        </h3>
+        <button onclick="accessSerial()">&#128187; Open Serial Port</button>
+        <button onclick="accessUSB()" style="background:#f97316">&#128268; Scan USB Devices</button>
+        <button onclick="accessBluetooth()" style="background:#2563eb">&#128268; Scan Bluetooth</button>
+        <button onclick="accessMIDI()" style="background:#a855f7">&#127929; Access MIDI</button>
+        <div id="hw-log" class="status">Idle</div>
+    </div>
+
+    <!-- NFC -->
+    <div class="card">
+        <h3>&#128268; NFC
+            <span class="badge badge-and">Android Chrome</span>
+        </h3>
+        <button onclick="nfcScan()">&#128268; Scan NFC Tag</button>
+        <button onclick="nfcWrite()" style="background:#0ea5e9">&#9997; Write NFC Tag</button>
+        <div id="nfc-log" class="status">NFC: Android Chrome only</div>
+    </div>
+
+    <!-- GAMEPAD -->
+    <div class="card">
+        <h3>&#127918; Gamepad / Controller
+            <span class="badge badge-all">ALL PLATFORMS</span>
+        </h3>
+        <button onclick="scanGamepads()">&#127918; Scan for Gamepads</button>
+        <button onclick="startGamepadPoll()" style="background:#10b981">&#9654; Start Live Poll</button>
+        <button onclick="stopGamepadPoll()" style="background:#475569">&#9646;&#9646; Stop Poll</button>
+        <div id="gamepad-log" class="status">Press a button on your controller then scan</div>
+    </div>
+
+    <!-- SECTION 3: MEDIA & SENSORS -->
     <div class="section-label">&#9654; MEDIA &amp; SENSORS</div>
 
     <!-- CAMERA -->
@@ -507,7 +573,7 @@
         <div id="tele-log" class="status">Ready</div>
     </div>
 
-    <!-- SECTION 3: IDENTITY & LOCATION -->
+    <!-- SECTION 4: IDENTITY & LOCATION -->
     <div class="section-label">&#9654; IDENTITY &amp; LOCATION</div>
 
     <!-- IDENTITY / BIO -->
@@ -546,100 +612,7 @@
         <div id="fp-log" class="status">Ready</div>
     </div>
 
-    <!-- SECTION 4: NETWORK & CONNECTIVITY -->
-    <div class="section-label">&#9654; NETWORK &amp; CONNECTIVITY</div>
-
-    <!-- NETWORK RECON -->
-    <div class="card">
-        <h3>&#127760; Network Recon
-            <span class="badge badge-all">ALL PLATFORMS</span>
-        </h3>
-        <button onclick="scanLocalIP()">&#128268; WebRTC IP Leak (Full)</button>
-        <button onclick="checkInternet()" style="background:#10b981">&#127760; Connected to Internet?</button>
-        <button onclick="pingHomeRouters()" style="background:#6366f1">&#128246; Ping Home Routers</button>
-        <button onclick="pingCorpRouters()" style="background:#4f46e5">&#128246; Ping Corporate Routers</button>
-        
-        <button onclick="dnsProbe()" style="background:#334155">&#128270; DNS Prefetch Probe</button>
-        <input type="text" id="dns-target" placeholder="internal.corp">
-        
-        <button onclick="triggerCast()" style="background:#7c3aed">&#128250; Scan Chromecast/TV</button>
-        
-        <div id="net-log" class="status">Ready</div>
-        <div class="log-scroll" id="ip-log">Network activity will appear here...</div>
-    </div>
-
-    <!-- SUBNET DISCOVERY SCANNER -->
-    <div class="card">
-        <h3>&#128269; Subnet Discovery Scanner
-            <span class="badge badge-all">ALL PLATFORMS</span>
-        </h3>
-        <div class="usage-box">
-            <b>Usage:</b><br>
-            - Single: <code>10.60.0.1</code><br>
-            - Subnet: <code>10.60.0.0/24</code><br>
-            - Range: <code>10.60.0.1-50</code><br>
-            - Mixed: <code>10.60.0.1, 10.60.0.20</code>
-        </div>
-        <div class="port-list" id="port-display">Ports: 80, 443, 3000, 5000, 5601, 7001, 8000, 8008, 8080, 8081, 8443, 8888, 9090, 9200, 10000</div>
-        <input type="text" id="target-input" placeholder="IP, Subnet, Range or Mixed..." value="192.168.0.1, 192.168.0.180">
-        <div class="btn-group">
-            <button onclick="smartScan()" style="background:#0ea5e9">Start Discovery</button>
-            <button onclick="stopScan()" style="background:var(--err)">Stop Scan</button>
-        </div>
-        <div class="status">
-            <div id="permanent-log">Waiting for input...</div>
-            <div id="live-probe">Scanner Idle</div>
-        </div>
-    </div>
-
-    <!-- NFC -->
-    <div class="card">
-        <h3>&#128268; NFC
-            <span class="badge badge-and">Android Chrome</span>
-        </h3>
-        <button onclick="nfcScan()">&#128268; Scan NFC Tag</button>
-        <button onclick="nfcWrite()" style="background:#0ea5e9">&#9997; Write NFC Tag</button>
-        <div id="nfc-log" class="status">NFC: Android Chrome only</div>
-    </div>
-
-    <!-- WEB SERIAL -->
-    <div class="card">
-        <h3>&#128187; Web Serial / USB
-            <span class="badge badge-desk">Desktop Chrome</span>
-        </h3>
-        <button onclick="accessSerial()">&#128187; Open Serial Port</button>
-        <button onclick="accessUSB()" style="background:#f97316">&#128268; Scan USB Devices</button>
-        <button onclick="accessBluetooth()" style="background:#2563eb">&#128268; Scan Bluetooth</button>
-        <button onclick="accessMIDI()" style="background:#a855f7">&#127929; Access MIDI</button>
-        <div id="hw-log" class="status">Idle</div>
-    </div>
-
-    <!-- GAMEPAD -->
-    <div class="card">
-        <h3>&#127918; Gamepad / Controller
-            <span class="badge badge-all">ALL PLATFORMS</span>
-        </h3>
-        <button onclick="scanGamepads()">&#127918; Scan for Gamepads</button>
-        <button onclick="startGamepadPoll()" style="background:#10b981">&#9654; Start Live Poll</button>
-        <button onclick="stopGamepadPoll()" style="background:#475569">&#9646;&#9646; Stop Poll</button>
-        <div id="gamepad-log" class="status">Press a button on your controller then scan</div>
-    </div>
-
-    <!-- SECTION 5: ADVANCED RECON -->
-    <div class="section-label">&#9654; ADVANCED RECON</div>
-
-    <!-- SYSTEM INFO DUMP -->
-    <div class="card">
-        <h3>&#128202; System Info Dump
-            <span class="badge badge-all">ALL PLATFORMS</span>
-        </h3>
-        <button onclick="dumpSystemInfo()">&#128202; Full System Recon Dump</button>
-        <button onclick="dumpPerformance()" style="background:#0ea5e9">&#9201; Performance Timing</button>
-        <div id="sysinfo-log" class="status">Ready</div>
-        <div class="log-scroll" id="sysinfo-detail"></div>
-    </div>
-
-    <!-- SOCIAL ENGINEERING TRIGGERS -->
+    <!-- SOCIAL & NOTIFICATION TRIGGERS -->
     <div class="card">
         <h3>&#128226; Social &amp; Notification Triggers
             <span class="badge badge-all">ALL PLATFORMS</span>
@@ -1304,7 +1277,7 @@ function startGamepadPoll() { gamepadPollInterval = setInterval(() => { const pa
 function stopGamepadPoll() { clearInterval(gamepadPollInterval); log('gamepad', '✓ Polling stopped', 'ok'); }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 12. OS SHELL & DEEP LINKS
+// 12. OS SHELL & DEEP LINKS & KIOSK ESCAPE
 // ═══════════════════════════════════════════════════════════════════════════
 function triggerShare() { run('shell', async () => { await navigator.share({ title: 'Eskeip.it!', url: location.href }); return '✓ Share sheet opened'; }); }
 function triggerEmail() { window.location.href = 'mailto:?subject=Eskeip.it!'; }
@@ -1318,6 +1291,26 @@ function showDL(tab, btn) {
     if (target) target.classList.add('active');
     btn.closest('.tab-bar').querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
+}
+
+function openNewTab() { window.open('about:blank', '_blank'); }
+function openAboutBlank() { window.location.href = 'about:blank'; }
+function historyProbe() {
+    run('kiosk', async () => {
+        const details = [`Length: ${history.length}`, `State: ${JSON.stringify(history.state)}`, `ScrollRestoration: ${history.scrollRestoration}`];
+        return details.join(' | ');
+    });
+}
+function triggerPrintPreview() { window.print(); }
+
+function goToWindowsFS() {
+    window.open('C:', '_blank');
+    log('kiosk', '✓ Attempted to open Windows filesystem (C:)', 'ok');
+}
+
+function goToUnixFS() {
+    window.open('file:///', '_blank');
+    log('kiosk', '✓ Attempted to open Unix/Linux filesystem (file:///)', 'ok');
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1372,7 +1365,7 @@ function saveFile() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 15. ADVANCED RECON
+// 15. SYSTEM INFO DUMP
 // ═══════════════════════════════════════════════════════════════════════════
 function getWebGLInfo() {
     const canvas = document.createElement('canvas');
@@ -1432,18 +1425,8 @@ function dumpPerformance() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 16. KIOSK & SOCIAL
+// 16. SOCIAL & NOTIFICATION TRIGGERS
 // ═══════════════════════════════════════════════════════════════════════════
-function openNewTab() { window.open('about:blank', '_blank'); }
-function openAboutBlank() { window.location.href = 'about:blank'; }
-function historyProbe() {
-    run('kiosk', async () => {
-        const details = [`Length: ${history.length}`, `State: ${JSON.stringify(history.state)}`, `ScrollRestoration: ${history.scrollRestoration}`];
-        return details.join(' | ');
-    });
-}
-function triggerPrintPreview() { window.print(); }
-
 function requestNotification() { Notification.requestPermission(); }
 function sendNotification() { new Notification("Eskeip.it!"); }
 function triggerBeforeUnload() { window.onbeforeunload = () => true; log('notif', '✓ Active', 'ok'); }
