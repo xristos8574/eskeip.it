@@ -7,6 +7,13 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Eskeip.it! — Cross-Platform Recon & Kiosk Tool</title>
+    
+    <!-- Favicon Links -->
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    
     <style>
         :root {
             --bg: #0a0f1e;
@@ -41,6 +48,15 @@
             color: var(--accent);
             letter-spacing: 3px;
             text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        header h1 img {
+            height: 1.2em;
+            width: auto;
+            filter: drop-shadow(0 0 2px rgba(56, 189, 248, 0.5));
         }
         header p {
             margin: 0;
@@ -290,7 +306,7 @@
 <body>
 
 <header>
-    <h1>&#9889; Eskeip.it!</h1>
+    <h1><img src="favicon-32x32.png" alt="Logo"> Eskeip.it!</h1>
     <p>Cross-Platform Browser Recon &amp; Capability Probe</p>
     <div id="platform-badge">Detecting platform...</div>
     <a href="#about-eskeip" class="header-link">What is eskeip.it?</a>
@@ -429,6 +445,7 @@
         </h3>
         <button onclick="scanLocalIP()">&#128268; WebRTC IP Leak (Full)</button>
         <button onclick="checkInternet()" style="background:#10b981">&#127760; Connected to Internet?</button>
+        <button onclick="whatIsMyIP()" style="background:#0ea5e9">&#127760; What is my IP?</button>
         <button onclick="pingHomeRouters()" style="background:#6366f1">&#128246; Ping Home Routers</button>
         <button onclick="pingCorpRouters()" style="background:#4f46e5">&#128246; Ping Corporate Routers</button>
         
@@ -1066,7 +1083,98 @@ function fontDetect() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 9. NETWORK RECON
+// 9. NETWORK RECON - WHAT IS MY IP?
+// ═══════════════════════════════════════════════════════════════════════════
+async function whatIsMyIP() {
+    run('net', async () => {
+        const output = [];
+        
+        // 1. Get Local IP via WebRTC
+        output.push('=== LOCAL IP DETECTION ===');
+        try {
+            const localIP = await getLocalIPViaWebRTC();
+            output.push(`Local IP: ${localIP}`);
+        } catch (e) {
+            output.push(`Local IP: Unable to detect (${e.message})`);
+        }
+        
+        // 2. Get Public IP via multiple fallback sources
+        output.push('\n=== PUBLIC IP DETECTION ===');
+        const publicIP = await getPublicIPWithFallback();
+        output.push(`Public IP: ${publicIP}`);
+        
+        document.getElementById('ip-log').innerText = output.join('\n');
+        return '✓ IP detection complete';
+    });
+}
+
+async function getLocalIPViaWebRTC() {
+    return new Promise((resolve, reject) => {
+        const pc = new RTCPeerConnection({ iceServers: [] });
+        const candidates = [];
+        
+        pc.onicecandidate = (e) => {
+            if (e.candidate) {
+                const parts = e.candidate.candidate.split(' ');
+                const ip = parts[4];
+                if (ip && ip.match(/^\d+\.\d+\.\d+\.\d+$/)) {
+                    candidates.push(ip);
+                }
+            } else {
+                pc.close();
+                if (candidates.length > 0) {
+                    resolve(candidates[0]);
+                } else {
+                    reject(new Error('No local IP candidates found'));
+                }
+            }
+        };
+        
+        pc.createDataChannel('');
+        pc.createOffer().then(offer => pc.setLocalDescription(offer)).catch(reject);
+        
+        setTimeout(() => {
+            if (candidates.length > 0) {
+                pc.close();
+                resolve(candidates[0]);
+            } else {
+                pc.close();
+                reject(new Error('Timeout'));
+            }
+        }, 3000);
+    });
+}
+
+async function getPublicIPWithFallback() {
+    const apis = [
+        { url: 'https://api.ipify.org?format=json', parser: r => r.ip },
+        { url: 'https://api.my-ip.io/ip.json', parser: r => r.ip },
+        { url: 'https://ipapi.co/json/', parser: r => r.ip },
+        { url: 'https://icanhazip.com/', parser: r => r.trim() },
+        { url: 'https://ifconfig.me/', parser: r => r.trim() },
+    ];
+    
+    for (const api of apis) {
+        try {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 3000);
+            const response = await fetch(api.url, { signal: controller.signal });
+            clearTimeout(timeout);
+            const data = await response.json().catch(() => response.text());
+            const ip = typeof data === 'string' ? data : api.parser(data);
+            if (ip && ip.match(/^\d+\.\d+\.\d+\.\d+$/)) {
+                return ip;
+            }
+        } catch (e) {
+            // Try next API
+        }
+    }
+    
+    return 'Unable to determine (all sources failed)';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 10. NETWORK RECON (ORIGINAL)
 // ═══════════════════════════════════════════════════════════════════════════
 function scanLocalIP() {
     run('net', async () => {
@@ -1166,7 +1274,7 @@ function dnsProbe() {
 function triggerCast() { run('net', async () => { const req = new PresentationRequest(['https://google.com']); await req.start(); return '✓ Cast UI active'; }); }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 9.1 SUBNET DISCOVERY SCANNER
+// 11. SUBNET DISCOVERY SCANNER
 // ═══════════════════════════════════════════════════════════════════════════
 let isScanning = false;
 
@@ -1259,7 +1367,7 @@ async function smartScan() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 10. NFC / SERIAL / USB / MIDI
+// 12. NFC / SERIAL / USB / MIDI
 // ═══════════════════════════════════════════════════════════════════════════
 function nfcScan() { run('nfc', async () => { const r = new NDEFReader(); await r.scan(); r.onreading = ({ serialNumber }) => log('nfc', `✓ Tag: ${serialNumber}`, 'ok'); return '✓ NFC scanning...'; }); }
 function nfcWrite() { run('nfc', async () => { const w = new NDEFReader(); await w.write("Eskeip.it!"); return '✓ NFC write success'; }); }
@@ -1269,7 +1377,7 @@ function accessBluetooth() { run('hw', async () => { const d = await navigator.b
 function accessMIDI() { run('hw', async () => { await navigator.requestMIDIAccess(); return '✓ MIDI access granted'; }); }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 11. GAMEPAD
+// 13. GAMEPAD
 // ═══════════════════════════════════════════════════════════════════════════
 let gamepadPollInterval = null;
 function scanGamepads() { run('gamepad', async () => { const pads = navigator.getGamepads().filter(Boolean); return pads.length ? pads.map(p => p.id).join('\n') : '⚠ No gamepads found'; }); }
@@ -1277,7 +1385,7 @@ function startGamepadPoll() { gamepadPollInterval = setInterval(() => { const pa
 function stopGamepadPoll() { clearInterval(gamepadPollInterval); log('gamepad', '✓ Polling stopped', 'ok'); }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 12. OS SHELL & DEEP LINKS & KIOSK ESCAPE
+// 14. OS SHELL & DEEP LINKS & KIOSK ESCAPE
 // ═══════════════════════════════════════════════════════════════════════════
 function triggerShare() { run('shell', async () => { await navigator.share({ title: 'Eskeip.it!', url: location.href }); return '✓ Share sheet opened'; }); }
 function triggerEmail() { window.location.href = 'mailto:?subject=Eskeip.it!'; }
@@ -1314,7 +1422,7 @@ function goToUnixFS() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 13. PWA & UI
+// 15. PWA & UI
 // ═══════════════════════════════════════════════════════════════════════════
 function triggerInstall() { run('badge', async () => '⚠ PWA Install requires user gesture + manifest'); }
 function setBadge()   { run('badge', async () => { await navigator.setAppBadge(1); return '✓ Badge set'; }); }
@@ -1330,7 +1438,7 @@ function enterFullscreen() { document.documentElement.requestFullscreen(); }
 function exitFullscreen()  { if (document.fullscreenElement) document.exitFullscreen(); }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 14. STORAGE & FILE SYSTEM
+// 16. STORAGE & FILE SYSTEM
 // ═══════════════════════════════════════════════════════════════════════════
 function checkStorage() { run('storage', async () => { const q = await navigator.storage.estimate(); return `Free: ${(q.quota / 1073741824).toFixed(2)} GB`; }); }
 function dumpLocalStorage() { run('storage', async () => `Keys: ${Object.keys(localStorage).length}`); }
@@ -1365,7 +1473,7 @@ function saveFile() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 15. SYSTEM INFO DUMP
+// 17. SYSTEM INFO DUMP
 // ═══════════════════════════════════════════════════════════════════════════
 function getWebGLInfo() {
     const canvas = document.createElement('canvas');
@@ -1425,7 +1533,7 @@ function dumpPerformance() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 16. SOCIAL & NOTIFICATION TRIGGERS
+// 18. SOCIAL & NOTIFICATION TRIGGERS
 // ═══════════════════════════════════════════════════════════════════════════
 function requestNotification() { Notification.requestPermission(); }
 function sendNotification() { new Notification("Eskeip.it!"); }
